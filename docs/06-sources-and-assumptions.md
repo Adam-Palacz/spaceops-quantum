@@ -36,6 +36,8 @@ F0 at λ=41 is one ideal p=1 evaluation with `max_evaluations=1`, seed 0 and par
 
 Finite-shot runs use Aer `seed_simulator`. Each observed bitstring keeps `count` and probability `count / shots`. Logical index 0 is qubit 0, so a Qiskit string is reversed before decoding. Feasibility uses the original budgets. A run whose shots are all infeasible stores `best_feasible_priority` empty, feasibility rate 0, and null approximation ratio and gap; the infeasible priority stays on the sample. `sampled_optimum_probability` is the shot frequency of the exact task selection, separate from the ideal-statevector probability. The checked circuits are the two- and three-qubit instances, not another 18-qubit sweep. JSONL archives remain a later task.
 
+Decision 001 was accepted on 2026-11-15. The confirmatory grid is F1–F3 at 6, 9, and 12 logical qubits and stays at p=1. F0 remains an encoding and execution smoke. Claimed PIAST-Q ceilings of 200 shots per circuit and about 50 circuits per job are still unverified.
+
 ## Decisions
 - Build one single-satellite/candidate-task *selection* model first; no temporal slots.
 - Preserve the six-task dataset and all three budgets from prior design.

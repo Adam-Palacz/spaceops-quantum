@@ -6,9 +6,14 @@
 - **RQ3 — Hardware realism:** How do penalty, circuit depth, shot count, noise and AQT-native compilation change feasibility and resources?
 
 ## Fixed fixture and derived scenarios
-- **F0:** `configs/six_tasks.yaml` (verified optimum 27, 37 feasible of 64).
-- **F1–F3 (later within MVP):** deterministic synthetic variants using changed priorities, tight budgets, and a simple degenerate/tie case; record generator seed, scenario and oracle. Avoid selective favorable instances.
-- Do not assert applicability to 100-satellite constellations from 6-task results.
+- **F0:** `configs/six_tasks.yaml` (verified optimum 27, 37 feasible of 64, 18 logical qubits). F0 is the encoding reference and a bounded execution smoke. A statevector that still contains every basis state can show priority 27 without being evidence that QAOA searched for it.
+- **F1:** 3 tasks, budgets 1/1/1, 6 logical qubits.
+- **F2:** 6 tasks, budgets 1/1/1, 9 logical qubits.
+- **F3:** 6 tasks, budgets 3/3/3, 12 logical qubits.
+- F1–F3 are the confirmatory grid. Each must be deterministic, with competing tasks, feasible and infeasible subsets, and an optimum from `solve_exact` recorded before QAOA runs. The reference block does not replace that oracle. These names replace the earlier untitled priority, tight-budget, and tie variants. The fixture files are added when the T15 grid is locked.
+- Do not assert applicability to 100-satellite constellations from these instances.
+
+Accepted in Decision 001 on 2026-11-15. p=2 is deferred, and circuit-depth sensitivity is not yet evaluated.
 
 ## Comparison arms
 | Arm | Type | Required for MVP | Notes |
@@ -22,10 +27,10 @@
 | QAOA PIAST-Q physical | Real hardware | **Out of MVP** | Requires new allocation/approval |
 
 ## Variables and study sequence
-1. **Correctness:** fixture F0 exact, QUBO verification, ideal QAOA p=1 smoke run.
-2. **Penalty sensitivity:** fixed p=1, compare λ in `{5, 10, 20, 41}`; report BOTH QUBO energy and original problem metrics. The exact penalty is not a tuned quantum optimum.
-3. **Depth:** compare p=1 and p=2 after p=1 is stable; document circuit width and depth.
-4. **Sampling:** compare budgeted shot counts (e.g., 256 and 1024), using fixed seeds (e.g., 0, 1, 2) for initial runs. Larger sweeps only after reproducibility is established.
+1. **Correctness:** fixture F0 exact, QUBO verification, ideal QAOA p=1 smoke run. Report that smoke as an execution check, not as algorithm performance.
+2. **Penalty sensitivity:** fixed p=1, compare λ in `{5, 10, 20, 41}`; report BOTH QUBO energy and original problem metrics. The exact penalty is not a tuned quantum optimum. Run this grid on F1–F3. Do not expand it across every F0 basis state.
+3. **Depth:** confirmatory runs stay at p=1. p=2 is a separate later experiment. Until that experiment exists, circuit-depth sensitivity is not yet evaluated.
+4. **Sampling:** local Aer budgets are 256 and 1024 shots, with seeds fixed before the run (initial list 0, 1, 2). Compare those shot counts at the same fixed `(gamma, beta)` so sampling is not confounded with a new optimizer search. A separate arm may vary `max_evaluations` at one shot count. Lock both budgets before reading T15 results. The claimed emulator ceiling of 200 shots is not a local setting and is unverified until T17.
 5. **Noise/compilation:** report compiled gate histogram, especially 2-qubit interactions, before trying emulator/QPU. Avoid pretending generic noise equals PIAST-Q noise.
 
 Lock a final comparison grid *before* looking at results. A quick exploratory run is allowed but labeled exploratory and excluded from confirmatory summary.
