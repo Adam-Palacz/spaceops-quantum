@@ -22,7 +22,7 @@
 - [x] **T13** Shot-based sampling, bit-order tests and run records. **Accept:** counts/probabilities validated; zero-feasible-sample case handled. **G3 review.** Evidence 2026-11-15 (local, uncommitted): `uv run ruff check .` → all checks passed; `uv run pytest -q` → 124 passed in 208.92s. Shots use `count / shots`. X on qubit 0 decodes to task A, bits (1, 0), priority 3. A prepared (1, 1, 0) run keeps priority 5 on the sample and leaves `best_feasible_priority` empty, with feasibility rate 0 and null ratio and gap. Seed 4 with 64 shots repeats the record. `sampled_optimum_probability` is the shot frequency, separate from the statevector probability. No JSONL archive.
 
 ## G4 — Research benchmark
-- [ ] **T14** Experiment runner, metrics, JSONL/CSV and manifest. **Accept:** valid schemas; every result linked to scenario hash/config/seed/version.
+- [x] **T14** Experiment runner, metrics, JSONL/CSV and manifest. **Accept:** valid schemas; every result linked to scenario hash/config/seed/version. Evidence 2026-11-15 (local, uncommitted): `uv run ruff check .` → all checks passed; `uv run pytest -q` → 130 passed in 197.53s. An exact F0 archive records scenario hash, package version 0.1.0, seed null, priority 27, tasks T1,T2,T5,T6, and `p_optimum_definition: not-a-sample`. A greedy miss records approx_ratio 5/6 against the oracle. An all-infeasible shot file keeps priority 5 on the sample and null best feasible priority. A 32-shot run stores seed 4, fixed parameters, and counts that sum to 32. `optimizer_max_evaluations` is null on these records. Circuit-depth sensitivity is stored as not-yet-evaluated. No F1–F3 grid.
 - [ ] **T15** Locked experiment grid: penalties, shot budgets, seeds; run and archive. **Accept:** failed runs disclosed; no selective reporting.
 - [ ] **T16** Summary charts/technical report + usage docs. **Accept:** tables show classical/ideal/sampled differences, feasibility, gap, resources and limitations. **G4 review.**
 
@@ -37,5 +37,5 @@
 | G1 | Passed | T01–T05. Fixture exact result 27 and 37/64; greedy feasible and deterministic; CLI validate/exact/greedy. `pytest` 66 passed, `ruff` clean. QUBO and QAOA remain outside this gate. | 2026-11-15 |
 | G2 | Passed | T06–T09. F0 has 18 logical qubits; λ=41 minimum is the reference optimum; Ising energy matches QUBO including the constant. `pytest` 114 passed, `ruff` clean. QAOA remains outside this gate. | 2026-11-15 |
 | G3 | Passed | T10–T13. Qiskit 2.4.1 and Aer 0.18.2. Ideal p=1 is reproducible on 3 qubits and completes one bounded 18-qubit F0 evaluation. Shot records validate counts, bit order and the empty feasible set. `pytest` 124 passed in 208.92s, `ruff` clean. The experiment archive remains outside this gate. | 2026-11-15 |
-| G4 | Not started | — | — |
+| G4 | In progress | T14 writes manifest, JSONL samples, metrics, and CSV linked to scenario hash, seed, and package version. `pytest` 130 passed in 197.53s, `ruff` clean. The locked F1–F3 grid and the report remain outside this task. | 2026-11-15 |
 | G5 | Deferred | — | — |

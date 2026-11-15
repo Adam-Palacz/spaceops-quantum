@@ -1,6 +1,7 @@
-"""Command-line interface for classical solves and QUBO inspection.
+"""Command-line interface for solves, QUBO inspection, and experiment archives.
 
-Experiment commands are later tasks. This module must not import Qiskit.
+Importing this module does not import Qiskit. The sampled experiment path
+loads Qiskit only when that method is selected.
 """
 
 from __future__ import annotations
@@ -19,8 +20,14 @@ from spaceops_quantum.classical import (
 )
 from spaceops_quantum.domain import ScenarioValidationError, load_scenario
 from spaceops_quantum.encoding import build_qubo, to_ising
+from spaceops_quantum.experiment import (
+    ExperimentArchiveError,
+    capture_classical,
+    capture_sampled,
+    write_experiment,
+)
 
-_EPILOG = "Experiment commands are added in a later task."
+_EPILOG = "Report commands are added in a later task."
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -77,6 +84,23 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="penalty applied to every resource constraint",
     )
+
+    experiment = commands.add_parser("experiment", help="write one experiment archive")
+    experiment_commands = experiment.add_subparsers(dest="experiment_command", required=True)
+    run = experiment_commands.add_parser(
+        "run",
+        help="solve once and write manifest, samples, and metrics",
+    )
+    run.add_argument("--method", required=True, choices=("exact", "greedy", "sampled"))
+    run.add_argument("--scenario", required=True, type=Path, help="path to a scenario YAML file")
+    run.add_argument("--out", required=True, type=Path, help="parent directory for the archive")
+    run.add_argument("--id", required=True, help="archive directory name")
+    run.add_argument("--strategy", default="resource_density")
+    run.add_argument("--seed", type=int, default=0)
+    run.add_argument("--shots", type=int, help="shot count for the sampled method")
+    run.add_argument("--penalty", type=int, help="penalty on every resource for the sampled method")
+    run.add_argument("--gamma", type=float, help="fixed QAOA gamma for the sampled method")
+    run.add_argument("--beta", type=float, help="fixed QAOA beta for the sampled method")
     return parser
 
 
@@ -93,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
         return _validate(args.scenario)
     if args.command == "qubo":
         return _qubo_inspect(args.scenario, args.penalty)
+    if args.command == "experiment":
+        return _experiment_run(args)
     return _solve(args.method, args.scenario, args.strategy, args.seed)
 
 
@@ -136,6 +162,83 @@ def _solve(method: str, path: Path, strategy: str, seed: int) -> int:
         print(str(exc), file=sys.stderr)
         return 2
     _print_result(result)
+    return 0
+
+
+def _experiment_run(args: argparse.Namespace) -> int:
+    if args.method == "sampled":
+        return _experiment_sampled(args)
+    if args.shots is not None or args.penalty is not None:
+        print("exact and greedy archives do not use --shots or --penalty", file=sys.stderr)
+        return 2
+    if args.gamma is not None or args.beta is not None:
+        print("exact and greedy archives do not use --gamma or --beta", file=sys.stderr)
+        return 2
+    try:
+        scenario = load_scenario(args.scenario)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except ScenarioValidationError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    try:
+        if args.method == "exact":
+            if args.strategy != "resource_density" or args.seed != 0:
+                print("exact does not use --strategy or --seed", file=sys.stderr)
+                return 2
+            result = solve_exact(scenario)
+        else:
+            result = solve_greedy(scenario, args.strategy, args.seed)
+    except GreedySolverError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    try:
+        destination = write_experiment(
+            args.out,
+            capture_classical(args.id, str(args.scenario), scenario, result),
+        )
+    except ExperimentArchiveError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"experiment_dir: {destination}")
+    return 0
+
+
+def _experiment_sampled(args: argparse.Namespace) -> int:
+    if args.shots is None or args.penalty is None or args.gamma is None or args.beta is None:
+        print("sampled archives require --shots, --penalty, --gamma, and --beta", file=sys.stderr)
+        return 2
+    if args.penalty < 0 or args.shots < 1:
+        print("penalty must be >= 0 and shots must be >= 1", file=sys.stderr)
+        return 2
+    try:
+        scenario = load_scenario(args.scenario)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except ScenarioValidationError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    from spaceops_quantum.quantum.qaoa import sample_qaoa
+
+    penalties = {"energy": args.penalty, "storage": args.penalty, "downlink": args.penalty}
+    record = sample_qaoa(
+        scenario,
+        parameters=(args.gamma, args.beta),
+        shots=args.shots,
+        seed=args.seed,
+        lambda_by_constraint=penalties,
+    )
+    try:
+        destination = write_experiment(
+            args.out,
+            capture_sampled(args.id, str(args.scenario), scenario, record, penalties),
+        )
+    except ExperimentArchiveError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"experiment_dir: {destination}")
     return 0
 
 

@@ -2,7 +2,7 @@
 
 **Hybrid Quantum–Classical Optimization for Earth Observation Satellite Task Selection**
 
-> Status: G3 passed. Local simulator lock is Qiskit 2.4.1 and Qiskit Aer 0.18.2. Ideal QAOA p=1 and finite-shot decoding are in place. The experiment archive is not implemented yet. PIAST-Q access is not verified.
+> Status: G4 in progress. G3 passed. One run can be written as a manifest, JSONL samples, metrics, and CSV. The confirmatory F1–F3 grid is not run yet. PIAST-Q access is not verified.
 
 ## Research question
 Can QAOA deliver valid and competitive solutions to constrained Earth-observation mission task-selection problems, and how do penalty encoding, circuit depth, sampling noise, and trapped-ion compilation affect performance relative to classical algorithms?
@@ -42,16 +42,17 @@ No multi-satellite constellation, orbital dynamics, real ephemerides, observatio
 
 ## Classical commands
 
-G1 checks a scenario and solves it with the exhaustive oracle or the greedy baseline. G2 adds the QUBO and Ising summary. Experiment commands come in a later task.
+G1 checks a scenario and solves it with the exhaustive oracle or the greedy baseline. G2 adds the QUBO and Ising summary. G4 writes one archive per run. The summary report comes in a later task.
 
 ```bash
 uv run spaceops-quantum validate configs/six_tasks.yaml
 uv run spaceops-quantum solve --method exact --scenario configs/six_tasks.yaml
 uv run spaceops-quantum solve --method greedy --scenario configs/six_tasks.yaml --seed 0
 uv run spaceops-quantum qubo inspect --scenario configs/six_tasks.yaml --penalty 41
+uv run spaceops-quantum experiment run --method exact --scenario configs/six_tasks.yaml --out results --id exact-f0
 ```
 
-`validate` checks the scenario schema. `exact` enumerates every subset and prints the feasible optimum. `greedy` ranks tasks by priority divided by the sum of `cost / budget` ratios, breaks ties by higher priority and then by task id, and adds a task only when the remaining budgets still hold it. `--seed` is stored with the greedy result and does not change that ranking. On the six-task fixture the greedy subset matches the optimum; other instances can be worse, and the result stays feasible. `qubo inspect` prints the 18 logical variables, the QUBO constant, and the Ising image under `s = 2v - 1`. The Ising constant is kept, so the two energies match exactly. `--penalty` applies one penalty to every resource.
+`validate` checks the scenario schema. `exact` enumerates every subset and prints the feasible optimum. `greedy` ranks tasks by priority divided by the sum of `cost / budget` ratios, breaks ties by higher priority and then by task id, and adds a task only when the remaining budgets still hold it. `--seed` is stored with the greedy result and does not change that ranking. On the six-task fixture the greedy subset matches the optimum; other instances can be worse, and the result stays feasible. `qubo inspect` prints the 18 logical variables, the QUBO constant, and the Ising image under `s = 2v - 1`. The Ising constant is kept, so the two energies match exactly. `--penalty` applies one penalty to every resource. `experiment run` writes `manifest.json`, `samples.jsonl`, `metrics.json`, and `summary.csv` under `--out/--id`. The manifest stores the scenario hash, seed, and package versions. Classical rows use `p_optimum_definition: not-a-sample`. Generated files in `results/` stay gitignored.
 
 ## Planned package
 Python 3.11+, `src/spaceops_quantum/`, `pytest`, `ruff`, Qiskit + Qiskit Aer, `numpy`, `scipy`. Resolve dependency versions with a committed lockfile at implementation time; validate current compatibility with the target provider before adding it. Use `uv` for reproducible local workflows.
