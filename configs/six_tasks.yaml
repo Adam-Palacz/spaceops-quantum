@@ -1,0 +1,24 @@
+schema_version: 1
+scenario_id: eo-six-tasks-v1
+description: >-
+  Frozen synthetic Earth-observation task-selection fixture.
+  Energy, storage and downlink are normalized unitless resource costs,
+  not a time-dependent spacecraft operations simulator.
+budgets:
+  energy: 10
+  storage: 10
+  downlink: 10
+tasks:
+  - {id: T1, priority: 10, energy: 4, storage: 3, downlink: 5}
+  - {id: T2, priority: 8, energy: 2, storage: 4, downlink: 2}
+  - {id: T3, priority: 7, energy: 5, storage: 2, downlink: 3}
+  - {id: T4, priority: 6, energy: 3, storage: 5, downlink: 4}
+  - {id: T5, priority: 5, energy: 1, storage: 2, downlink: 2}
+  - {id: T6, priority: 4, energy: 2, storage: 1, downlink: 1}
+reference:
+  source: verified-exhaustive-enumeration
+  selected_task_ids: [T1, T2, T5, T6]
+  optimal_priority: 27
+  used: {energy: 9, storage: 10, downlink: 10}
+  feasible_subsets: 37
+  total_subsets: 64

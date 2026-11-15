@@ -1,0 +1,44 @@
+# Qiskit and Aer live in the quantum group. Domain code must not import them.
+# Locked by uv on 2026-11-15: qiskit 2.4.1 (inside the published AQT range
+# 2.3–2.4.1) and qiskit-aer 0.18.2. PIAST-Q access is not verified here.
+
+[project]
+name = "spaceops-quantum"
+version = "0.1.0"
+description = "Hybrid quantum-classical optimization benchmark for Earth-observation satellite task selection."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0.2",
+]
+
+[project.scripts]
+spaceops-quantum = "spaceops_quantum.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+quantum = [
+    "qiskit==2.4.1",
+    "qiskit-aer==0.18.2",
+]
+
+[tool.uv]
+default-groups = ["dev", "quantum"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

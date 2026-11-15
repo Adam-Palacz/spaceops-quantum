@@ -1,0 +1,211 @@
+"""Command-line interface for classical solves and QUBO inspection.
+
+Experiment commands are later tasks. This module must not import Qiskit.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from fractions import Fraction
+from pathlib import Path
+
+from spaceops_quantum import __version__
+from spaceops_quantum.classical import (
+    ClassicalResult,
+    GreedySolverError,
+    solve_exact,
+    solve_greedy,
+)
+from spaceops_quantum.domain import ScenarioValidationError, load_scenario
+from spaceops_quantum.encoding import build_qubo, to_ising
+
+_EPILOG = "Experiment commands are added in a later task."
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="spaceops-quantum",
+        description=(
+            "Hybrid quantum-classical benchmark for Earth-observation task selection."
+        ),
+        epilog=_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="print the installed package version and exit",
+    )
+    commands = parser.add_subparsers(dest="command")
+
+    validate = commands.add_parser("validate", help="validate a scenario file")
+    validate.add_argument("scenario", type=Path, help="path to a scenario YAML file")
+
+    solve = commands.add_parser("solve", help="solve a scenario with a classical method")
+    solve.add_argument(
+        "--method",
+        required=True,
+        choices=("exact", "greedy"),
+        help="exact enumerates every subset; greedy builds one feasible subset",
+    )
+    solve.add_argument("--scenario", required=True, type=Path, help="path to a scenario YAML file")
+    solve.add_argument(
+        "--strategy",
+        default="resource_density",
+        help="greedy ranking strategy (default: resource_density)",
+    )
+    solve.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="recorded greedy seed; it does not change resource_density ranking",
+    )
+
+    qubo = commands.add_parser("qubo", help="inspect the QUBO and Ising encoding")
+    qubo_commands = qubo.add_subparsers(dest="qubo_command", required=True)
+    inspect = qubo_commands.add_parser("inspect", help="print the QUBO and Ising summary")
+    inspect.add_argument(
+        "--scenario",
+        required=True,
+        type=Path,
+        help="path to a scenario YAML file",
+    )
+    inspect.add_argument(
+        "--penalty",
+        required=True,
+        type=int,
+        help="penalty applied to every resource constraint",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    if args.version:
+        print(f"spaceops-quantum {__version__}")
+        return 0
+    if args.command is None:
+        parser.print_help()
+        return 0
+    if args.command == "validate":
+        return _validate(args.scenario)
+    if args.command == "qubo":
+        return _qubo_inspect(args.scenario, args.penalty)
+    return _solve(args.method, args.scenario, args.strategy, args.seed)
+
+
+def _validate(path: Path) -> int:
+    try:
+        scenario = load_scenario(path)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except ScenarioValidationError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    print(f"scenario_id: {scenario.scenario_id}")
+    print(f"schema_version: {scenario.schema_version}")
+    print(f"tasks: {len(scenario.tasks)}")
+    print(f"energy_budget: {scenario.budgets.energy}")
+    print(f"storage_budget: {scenario.budgets.storage}")
+    print(f"downlink_budget: {scenario.budgets.downlink}")
+    print("valid: true")
+    return 0
+
+
+def _solve(method: str, path: Path, strategy: str, seed: int) -> int:
+    if method == "exact" and (strategy != "resource_density" or seed != 0):
+        print("exact does not use --strategy or --seed", file=sys.stderr)
+        return 2
+    try:
+        scenario = load_scenario(path)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except ScenarioValidationError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    try:
+        if method == "exact":
+            result = solve_exact(scenario)
+        else:
+            result = solve_greedy(scenario, strategy, seed)
+    except GreedySolverError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    _print_result(result)
+    return 0
+
+
+def _print_result(result: ClassicalResult) -> None:
+    print(f"method: {result.method}")
+    if result.strategy is not None:
+        print(f"strategy: {result.strategy}")
+    if result.seed is not None:
+        print(f"seed: {result.seed}")
+    print(f"scenario_id: {result.scenario_id}")
+    print(f"examined_subsets: {result.examined_subsets}")
+    print(f"feasible_subsets: {_optional(result.feasible_subsets)}")
+    print(f"total_subsets: {_optional(result.total_subsets)}")
+    print("selected_task_ids: " + ",".join(result.solution.selected_task_ids))
+    print(f"priority: {result.solution.priority}")
+    print(f"energy: {result.solution.used.energy}")
+    print(f"storage: {result.solution.used.storage}")
+    print(f"downlink: {result.solution.used.downlink}")
+    print(f"feasible: {str(result.solution.feasible).lower()}")
+
+
+def _qubo_inspect(path: Path, penalty: int) -> int:
+    if penalty < 0:
+        print("penalty must be an integer >= 0", file=sys.stderr)
+        return 2
+    try:
+        scenario = load_scenario(path)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except ScenarioValidationError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    penalties = {"energy": penalty, "storage": penalty, "downlink": penalty}
+    qubo = build_qubo(scenario, penalties)
+    ising = to_ising(qubo)
+    print(f"scenario_id: {scenario.scenario_id}")
+    print(f"scenario_hash: {qubo.scenario_hash}")
+    print(f"penalty_energy: {penalty}")
+    print(f"penalty_storage: {penalty}")
+    print(f"penalty_downlink: {penalty}")
+    print(f"n_task_bits: {qubo.n_task_bits}")
+    print(f"n_slack_bits: {qubo.n_slack_bits}")
+    print(f"n_logical_qubits: {qubo.n_logical_qubits}")
+    print(f"qubo_constant: {qubo.constant}")
+    print(f"qubo_linear_terms: {_nonzero_count(qubo.linear)}")
+    print(f"qubo_quadratic_terms: {len(qubo.quadratic)}")
+    print(f"ising_constant: {_format_fraction(ising.constant)}")
+    print(f"ising_linear_terms: {_nonzero_count(ising.linear)}")
+    print(f"ising_quadratic_terms: {len(ising.quadratic)}")
+    print("spin_map: s = 2v - 1")
+    print("variable_names: " + ",".join(qubo.variable_names))
+    return 0
+
+
+def _nonzero_count(terms: tuple[tuple[str, object], ...]) -> int:
+    return sum(1 for _name, coefficient in terms if coefficient != 0)
+
+
+def _format_fraction(value: Fraction) -> str:
+    if value.denominator == 1:
+        return str(value.numerator)
+    return f"{value.numerator}/{value.denominator}"
+
+
+def _optional(value: int | None) -> str:
+    if value is None:
+        return "null"
+    return str(value)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

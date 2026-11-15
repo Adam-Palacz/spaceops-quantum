@@ -1,0 +1,19 @@
+---
+description: Specification-driven development rules for SpaceOps Quantum research repository
+alwaysApply: true
+---
+
+# SpaceOps Quantum — Cursor Rule
+
+You are implementing **a verifiable research benchmark**, not a production satellite constellation scheduler.
+
+**Read these before editing:** `AGENTS.md`, `specs/001-task-selection/spec.md`, `docs/02-mathematical-model.md`, `specs/001-task-selection/tasks.md`.
+
+- Follow `AGENTS.md` completely. Work on the earliest uncompleted Txx task, not multiple phases.
+- Use tests as acceptance evidence. For the frozen six-task fixture, exact utility is **27** (T1,T2,T5,T6), resource costs **9,10,10**, feasible count **37/64**.
+- QUBO requires explicit slack variables: 6 task variables + 12 slack bits = **18 logical qubits**, not 6.
+- Decode and validate all quantum samples using the original constrained evaluator. Track infeasibility; do not hide it.
+- Keep domain code importable without Qiskit. No physical QPU calls or credential handling by default.
+- Prohibit scope creep: no scheduling time windows, satellite constellations, LLM agents, Jetson, Kubernetes or UI until feature spec is approved and the relevant gate is passed.
+- Do not invent experiment outcomes. Be precise about ideal simulator, sampled simulator, noisy simulator and real hardware.
+- End each change with files changed, tests run, limitations and next Txx task; update `tasks.md` only when acceptance conditions are actually met.
