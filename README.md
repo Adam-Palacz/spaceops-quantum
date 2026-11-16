@@ -2,7 +2,7 @@
 
 **Hybrid Quantum–Classical Optimization for Earth Observation Satellite Task Selection**
 
-> Status: G4 in progress. G3 passed. One run archives the full scenario, samples, metrics, timing, and, for optimized QAOA, the evaluation trace. Fixed parameters are not reported as an optimized search. The confirmatory F1–F3 grid is locked in `configs/t15_grid.yaml` and has not been executed. PIAST-Q access is not verified.
+> Status: G4 in progress. G3 passed. One run archives the full scenario, samples, metrics, timing, and, for optimized QAOA, the evaluation trace. Fixed parameters are not reported as an optimized search. The confirmatory F1–F3 grid is locked in `configs/t15_grid.yaml` and has been executed once. The aggregate record is in `specs/001-task-selection/t15-grid.md`. PIAST-Q access is not verified.
 
 ## Research question
 Can QAOA deliver valid and competitive solutions to constrained Earth-observation mission task-selection problems, and how do penalty encoding, circuit depth, sampling noise, and trapped-ion compilation affect performance relative to classical algorithms?

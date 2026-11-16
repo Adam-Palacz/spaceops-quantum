@@ -10,7 +10,7 @@
 - **F1:** 3 tasks, budgets 1/1/1, 6 logical qubits.
 - **F2:** 6 tasks, budgets 1/1/1, 9 logical qubits.
 - **F3:** 6 tasks, budgets 3/3/3, 12 logical qubits.
-- F1–F3 are the confirmatory grid. Each must be deterministic, with competing tasks, feasible and infeasible subsets, and an optimum from `solve_exact` recorded before QAOA runs. The reference block does not replace that oracle. These names replace the earlier untitled priority, tight-budget, and tie variants. The fixture files and `configs/t15_grid.yaml` are locked. The grid has not been executed.
+- F1–F3 are the confirmatory grid. Each must be deterministic, with competing tasks, feasible and infeasible subsets, and an optimum from `solve_exact` recorded before QAOA runs. The reference block does not replace that oracle. These names replace the earlier untitled priority, tight-budget, and tie variants. The fixture files and `configs/t15_grid.yaml` are locked. The grid was executed once; the aggregate record is in `specs/001-task-selection/t15-grid.md`.
 - Do not assert applicability to 100-satellite constellations from these instances.
 
 Accepted in Decision 001 on 2026-11-15. p=2 is deferred, and circuit-depth sensitivity is not yet evaluated.
