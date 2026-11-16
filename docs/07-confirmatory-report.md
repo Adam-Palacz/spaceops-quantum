@@ -36,6 +36,37 @@ An infeasible subset with the same priority is not a success. F1 has two optimal
 
 Greedy stays feasible. On F1 it selects the cheaper competing task and misses both optimal subsets. On F2 and F3 it matches the exact objective. Classical cell time for all six solves was 1.4 s.
 
+## Uniform task draw
+
+`p_uniform` is an exact count, not a Monte Carlo sample. It draws a task subset uniformly from all `2^n` subsets and ignores slack. A draw succeeds when that subset is feasible and its priority equals the exact optimum.
+
+| Scenario | Optimal subsets | Task subsets | `p_uniform` |
+|---|---|---|---|
+| F1 | 2 | 8 | 1/4 = 0.250 |
+| F2 | 1 | 64 | 1/64 = 0.015625 |
+| F3 | 1 | 64 | 1/64 = 0.015625 |
+
+The comparable quantum number is `p_optimum / p_uniform`. A ratio below 1 means the QAOA mass on optimal task subsets is smaller than this draw. The ideal and fixed-parameter arms are different procedures: the ideal arm optimizes `(γ, β)` with COBYLA, and the shot arm uses the fixed pair `(0.1, 0.2)`.
+
+Ideal medians of that ratio, three seeds, `max_evaluations=25`:
+
+| λ | F1 | F2 | F3 |
+|---|---|---|---|
+| 5 | 1.009 | 2.648 | 1.066 |
+| 10 | 0.814 | 1.751 | 0.915 |
+| 20 | 0.861 | 1.705 | 0.897 |
+| 41 | 0.524 | 0.622 | 1.090 |
+
+At the correctness penalty λ=41, the ideal median is below the uniform task draw on F1 and F2 and only slightly above it on F3. The fixed 1024-shot medians are 0.992, 1.188, and 1.875. That is one parameter pair and three seeds. This sample does not show a consistent advantage over uniform task selection. Greedy already matches the exact objective on F2 and F3.
+
+## QUBO ground state
+
+`p_optimum` counts every slack assignment of an optimal feasible task subset. That is the right number for the satellite decision. `p_ground_state` counts only bitstrings that achieve the enumerated QUBO minimum, so the slack has to satisfy the penalized equalities. At a low penalty the minimum itself can be an infeasible assignment. The two numbers are computed from the archived samples; the grid was not rerun.
+
+Ideal median `p_ground_state` at λ=41 is 0.015 on F1, 0.001 on F2, and 0.0003 on F3. Each is well below the corresponding `p_optimum` median. On the 256-shot F3 cells the median ground-state frequency is 0: those shots can land on the optimal tasks without landing on a minimum-energy slack assignment.
+
+The machine-readable cells, both probabilities, and the ratios are in [`docs/aggregates/t15-v1.json`](aggregates/t15-v1.json). The charts are [`t15-ratio.svg`](aggregates/t15-ratio.svg) and [`t15-ground-vs-optimum.svg`](aggregates/t15-ground-vs-optimum.svg). Raw `results/t15/` archives stay gitignored. The aggregate records git SHA `0cb532899223c67798fded033fe797a2b78b8f65`, 66 cells, and packages qiskit 2.4.1, qiskit-aer 0.18.2, spaceops-quantum 0.1.0. Archived probability mass is 1 within floating-point error. Absolute paths are omitted.
+
 ## Ideal QAOA
 
 COBYLA, p=1, `max_evaluations=25`, initial (γ, β) drawn from seed on `[0, π)`. The same penalty is applied to energy, storage, and downlink. Cells: 3 scenarios × 4 penalties × 3 seeds = 36. Values are minimum / median / maximum of `p_optimum`.
@@ -89,8 +120,9 @@ Every shot cell drew at least one feasible optimum, so the gap of the best obser
 ## Limitations
 
 - The instances have 6, 9, and 12 logical qubits. F0, the 18-qubit encoding reference, is not part of this grid.
-- Depth p=2, noise, and AQT-native compilation were not run. Gate and depth counts are absent.
-- Ideal `approx_ratio` of 1 is a complete-support fact. The comparable quantum numbers are `p_optimum` and, for shots, the success frequency together with the feasibility rate.
+- Depth p=2, noise, and AQT-native compilation were not run. Gate and depth counts are absent. `transpile_time_sec` is null and circuit-depth sensitivity is `not-yet-evaluated`.
+- Ideal `approx_ratio` of 1 is a complete-support fact. The comparable quantum numbers are `p_optimum`, `p_optimum / p_uniform`, and `p_ground_state`.
 - Three seeds are the whole locked sample. They show wide ranges, especially on F1 and on F2 at λ=5.
-- No PIAST-Q job was submitted. Emulator shot limits remain unverified.
-- These results do not transfer to orbital scheduling or a satellite constellation.
+- No continuous-integration run is recorded for the commit that closed T16. Local pytest evidence is listed in `specs/001-task-selection/tasks.md`.
+- No PIAST-Q job was submitted. Emulator shot limits, native gates, and compiled depth remain unverified. The read-only check is planned in `specs/001-task-selection/t17-access-plan.md` and has not been executed.
+- These results do not transfer to orbital scheduling or a satellite constellation. Feature 002 stays outside this benchmark.

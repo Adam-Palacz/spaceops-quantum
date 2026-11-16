@@ -45,6 +45,8 @@ Lock a final comparison grid *before* looking at results. A quick exploratory ru
 - The objective is **maximized**; for feasible solutions with known optimum >0: `approx_ratio = value/optimum`, `relative_gap = (optimum-value)/optimum`. For invalid solutions both are null.
 - Success probability is the frequency of every feasible subset whose priority equals the exact optimum. The lexicographic subset returned by `solve_exact` is one of those subsets, not the only one. An infeasible subset with the same priority is not a success. Success is not the frequency of minimum QUBO energy unless both coincide.
 - For an ideal statevector archive, `p_optimum` is the performance result. `best_feasible_priority` and `approx_ratio` on that archive describe the decoded support. A complete support contains the optimum even when its probability is small. A finite-shot archive reports shot frequency, feasibility rate, and the best feasible priority among the shots that were actually drawn.
+- `p_optimum` ignores slack: every feasible task subset at the exact priority counts, including a slack assignment that misses the QUBO equalities. A later aggregate may also report `p_ground_state`, the probability of bitstrings at the enumerated QUBO minimum. That number is not a schema field and does not replace `p_optimum`. `p_uniform` is the exact share of task subsets that are feasible and optimal; slack bits are not part of that draw.
+- `experiment grid` refuses a nonempty output directory before writing. A repeat uses a new directory. It does not append into an existing archive.
 
 ## Required artifacts per experiment
 ```text

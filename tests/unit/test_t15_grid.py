@@ -6,12 +6,25 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 from spaceops_quantum.classical import solve_exact
 from spaceops_quantum.domain import evaluate_solution, load_scenario
 from spaceops_quantum.encoding import build_qubo
 from spaceops_quantum.experiment.grid import load_planned_runs
 
 _ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_grid_refuses_a_populated_directory(tmp_path: Path) -> None:
+    from spaceops_quantum.experiment.execute import GridOutputError, execute_grid
+
+    (tmp_path / "previous.txt").write_text("keep", encoding="utf-8")
+    with pytest.raises(GridOutputError, match="not empty"):
+        execute_grid(tmp_path)
+    assert (tmp_path / "previous.txt").read_text(encoding="utf-8") == "keep"
+    assert not (tmp_path / "grid_summary.json").exists()
+    assert "qiskit" not in sys.modules
 
 
 def test_exact_grid_cell_archives_without_qiskit(tmp_path: Path) -> None:

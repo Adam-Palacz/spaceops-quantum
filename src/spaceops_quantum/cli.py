@@ -326,9 +326,13 @@ def _experiment_optimized(args: argparse.Namespace) -> int:
 
 
 def _experiment_grid(args: argparse.Namespace) -> int:
-    from spaceops_quantum.experiment.execute import execute_grid
+    from spaceops_quantum.experiment.execute import GridOutputError, execute_grid
 
-    outcomes = execute_grid(args.out)
+    try:
+        outcomes = execute_grid(args.out)
+    except GridOutputError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     failed = [item["experiment_id"] for item in outcomes if item["status"] != "ok"]
     print(f"completed: {len(outcomes) - len(failed)}")
     print(f"failed: {len(failed)}")

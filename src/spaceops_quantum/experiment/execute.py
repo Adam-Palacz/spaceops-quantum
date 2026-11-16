@@ -24,9 +24,17 @@ from spaceops_quantum.experiment.grid import PlannedRun, load_planned_runs
 _ROOT = Path(__file__).resolve().parents[3]
 
 
+class GridOutputError(FileExistsError):
+    """The output directory already holds a previous run."""
+
+
 def execute_grid(out_dir: Path) -> tuple[dict[str, object], ...]:
     """Run every locked cell once and write ``grid_summary.json``."""
 
+    if out_dir.exists() and any(out_dir.iterdir()):
+        raise GridOutputError(
+            f"output directory is not empty: {out_dir}. Use a new directory."
+        )
     runs = load_planned_runs()
     out_dir.mkdir(parents=True, exist_ok=True)
     outcomes: list[dict[str, object]] = []

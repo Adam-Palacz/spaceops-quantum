@@ -13,7 +13,7 @@ Implement slack bits, coefficient expansion, bit mapping, exact small-instance e
 Implement ideal simulator using supported versions; p=1 bounded budget; sampled outcomes, unambiguous mapping, independent decode; seed reproducibility. **Exit:** complete run records without falsely declaring an optimal QAOA result.
 
 ## Phase S4 — Benchmark/report (G4)
-Add shot-based runs, greedy comparison, penalty and depth study, statistical summaries, provenance manifest, charts and concise technical report. **Exit:** all claims trace to produced data, several independent seeds, no silent infeasible repairs. The p=1 confirmatory report is `docs/07-confirmatory-report.md`. Depth p=2 and noisy simulation remain outside that exit.
+Add shot-based runs, greedy comparison, penalty and depth study, statistical summaries, provenance manifest, charts and concise technical report. **Exit:** all claims trace to produced data, several independent seeds, no silent infeasible repairs. The p=1 confirmatory report is `docs/07-confirmatory-report.md`. A post-exit aggregate adds the uniform task baseline and the QUBO ground-state probability in `docs/aggregates/t15-v1.json`. Depth p=2, noisy simulation, and hardware compilation remain outside that exit.
 
 ## Phase S5 — PIAST-Q emulator preparation (G5, separate approval)
 Use approved emulator environment, inspect access and package versions, compile to backend-native instruction set, measure depth/two-qubit operations, assess noise and quota. **Exit:** emulator benchmark and go/no-go document; physical QPU run remains a separately approved experiment.
