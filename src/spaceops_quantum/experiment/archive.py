@@ -4,14 +4,17 @@ The directory holds a manifest, one JSON object per evaluated sample, metrics,
 and a one-row CSV summary. A classical solve is not a shot frequency:
 ``p_optimum`` stays null and ``p_optimum_definition`` is ``not-a-sample``.
 A fixed-parameter shot run stores ``shot-frequency`` and leaves
-``optimizer_max_evaluations`` null, so sampling is not confused with a search.
-This module does not import Qiskit.
+``optimizer_max_evaluations`` null. An optimized run stores
+``statevector-probability``, the evaluation budget, and the COBYLA trace.
+Original budget violations, QUBO equality residuals, and penalized energy are
+separate fields. This module does not import Qiskit.
 """
 
 from __future__ import annotations
 
 import csv
 import json
+import math
 import platform
 import subprocess
 import sys
@@ -23,11 +26,12 @@ from pathlib import Path
 
 from spaceops_quantum.classical import ClassicalResult, solve_exact
 from spaceops_quantum.domain.models import Scenario
+from spaceops_quantum.encoding.penalty_audit import SampleAssessment
 from spaceops_quantum.encoding.qubo import scenario_hash
 from spaceops_quantum.quantum.sampling import SampledRunRecord
 
 _PACKAGES = ("spaceops-quantum", "qiskit", "qiskit-aer")
-_SCHEMA_VERSION = 1
+_SCHEMA_VERSION = 2
 
 
 class ExperimentArchiveError(ValueError):
@@ -51,6 +55,12 @@ class ArchivedSample:
     violation_energy: int
     violation_storage: int
     violation_downlink: int
+    equality_energy: int | None = None
+    equality_storage: int | None = None
+    equality_downlink: int | None = None
+    equality_satisfied: bool | None = None
+    qubo_energy: int | None = None
+    weighted_penalty: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,6 +91,9 @@ class ExperimentCapture:
     feasible_subsets: int | None
     total_subsets: int | None
     examined_subsets: int | None
+    wall_time_sec: float
+    optimizer_time_sec: float | None = None
+    optimizer_trace: tuple[tuple[int, tuple[float, ...], float], ...] | None = None
 
 
 def capture_classical(
@@ -88,6 +101,8 @@ def capture_classical(
     scenario_path: str,
     scenario: Scenario,
     result: ClassicalResult,
+    *,
+    wall_time_sec: float,
 ) -> ExperimentCapture:
     """Record one exact or greedy solve against the exhaustive optimum."""
 
@@ -95,6 +110,7 @@ def capture_classical(
         raise ExperimentArchiveError(f"unsupported classical method {result.method}")
     if result.scenario_id != scenario.scenario_id:
         raise ExperimentArchiveError("classical result does not match the scenario")
+    _require_duration(wall_time_sec, "wall_time_sec")
     optimum = solve_exact(scenario).solution
     solution = result.solution
     ratio, gap = _ratios(solution.priority if solution.feasible else None, optimum.priority)
@@ -140,6 +156,7 @@ def capture_classical(
         feasible_subsets=result.feasible_subsets,
         total_subsets=result.total_subsets,
         examined_subsets=result.examined_subsets,
+        wall_time_sec=wall_time_sec,
     )
 
 
@@ -149,27 +166,21 @@ def capture_sampled(
     scenario: Scenario,
     record: SampledRunRecord,
     penalties: Mapping[str, int],
+    *,
+    wall_time_sec: float,
 ) -> ExperimentCapture:
     """Record fixed-parameter shots. The optimizer budget stays null."""
 
     digest = scenario_hash(scenario)
     if record.scenario_hash != digest or record.scenario_id != scenario.scenario_id:
         raise ExperimentArchiveError("sampled record does not match the scenario")
+    _require_duration(wall_time_sec, "wall_time_sec")
     rows = tuple(
-        ArchivedSample(
+        _from_assessment(
+            shot.assessment,
             bits=shot.bits,
             count=shot.count,
             probability=shot.probability,
-            selected_task_ids=shot.assessment.selected_task_ids,
-            task_bits=shot.assessment.task_bits,
-            priority=shot.assessment.priority,
-            feasible=shot.assessment.task_feasible,
-            energy=shot.assessment.used.energy,
-            storage=shot.assessment.used.storage,
-            downlink=shot.assessment.used.downlink,
-            violation_energy=shot.assessment.violations.energy,
-            violation_storage=shot.assessment.violations.storage,
-            violation_downlink=shot.assessment.violations.downlink,
         )
         for shot in record.samples
     )
@@ -198,21 +209,85 @@ def capture_sampled(
         feasible_subsets=None,
         total_subsets=None,
         examined_subsets=None,
+        wall_time_sec=wall_time_sec,
     )
 
 
-def write_experiment(out_dir: Path, capture: ExperimentCapture) -> Path:
-    """Create ``out_dir/experiment_id`` and write the four archive files."""
+def capture_optimized(
+    experiment_id: str,
+    scenario_path: str,
+    scenario: Scenario,
+    samples: tuple[ArchivedSample, ...],
+    *,
+    backend: str,
+    seed: int,
+    p: int,
+    parameters: tuple[float, ...],
+    penalties: Mapping[str, int],
+    max_evaluations: int,
+    trace: tuple[tuple[int, tuple[float, ...], float], ...],
+    feasibility_rate: float,
+    p_optimum: float,
+    wall_time_sec: float,
+) -> ExperimentCapture:
+    """Record an optimized statevector run and its evaluation trace."""
+
+    _require_duration(wall_time_sec, "wall_time_sec")
+    checked_trace = _require_trace(trace, max_evaluations)
+    if p != 1:
+        raise ExperimentArchiveError(f"optimized archive in this task accepts p=1, got {p}")
+    best_priority, best_ids = _best_feasible(samples)
+    ratio, gap = _ratios(best_priority, solve_exact(scenario).solution.priority)
+    return ExperimentCapture(
+        experiment_id=experiment_id,
+        scenario_path=scenario_path,
+        scenario_id=scenario.scenario_id,
+        scenario_hash=scenario_hash(scenario),
+        solver="qaoa-ideal",
+        backend=backend,
+        seed=seed,
+        shots=None,
+        p=p,
+        parameter_source="optimizer",
+        optimizer_max_evaluations=max_evaluations,
+        parameters=parameters,
+        penalties=tuple(sorted(penalties.items())),
+        samples=samples,
+        best_feasible_priority=best_priority,
+        best_feasible_task_ids=best_ids,
+        feasibility_rate=feasibility_rate,
+        approx_ratio=ratio,
+        relative_gap=gap,
+        p_optimum=p_optimum,
+        p_optimum_definition="statevector-probability",
+        feasible_subsets=None,
+        total_subsets=None,
+        examined_subsets=None,
+        wall_time_sec=wall_time_sec,
+        optimizer_time_sec=wall_time_sec,
+        optimizer_trace=checked_trace,
+    )
+
+
+def write_experiment(out_dir: Path, capture: ExperimentCapture, scenario: Scenario) -> Path:
+    """Create ``out_dir/experiment_id`` and write the archive files."""
 
     experiment_id = _require_id(capture.experiment_id)
+    if scenario.scenario_id != capture.scenario_id:
+        raise ExperimentArchiveError("scenario does not match the capture")
+    if scenario_hash(scenario) != capture.scenario_hash:
+        raise ExperimentArchiveError("scenario hash does not match the capture")
     destination = out_dir / experiment_id
     if destination.exists():
         raise ExperimentArchiveError(f"experiment directory already exists: {destination}")
     destination.mkdir(parents=True)
     manifest = _manifest(capture)
     metrics = _metrics(capture)
+    _write_json(destination / "scenario.json", _scenario_snapshot(scenario))
     _write_json(destination / "manifest.json", manifest)
     _write_json(destination / "metrics.json", metrics)
+    if capture.optimizer_trace is not None:
+        _write_json(destination / "optimizer_trace.json", _trace_payload(capture.optimizer_trace))
     _write_samples(destination / "samples.jsonl", capture.samples)
     _write_summary(destination / "summary.csv", metrics)
     return destination
@@ -239,6 +314,10 @@ def _manifest(capture: ExperimentCapture) -> dict[str, object]:
         "optimizer_max_evaluations": capture.optimizer_max_evaluations,
         "parameters": None if capture.parameters is None else list(capture.parameters),
         "penalties": None if capture.penalties is None else dict(capture.penalties),
+        "scenario_file": "scenario.json",
+        "optimizer_trace_file": (
+            None if capture.optimizer_trace is None else "optimizer_trace.json"
+        ),
     }
 
 
@@ -269,6 +348,9 @@ def _metrics(capture: ExperimentCapture) -> dict[str, object]:
         "total_subsets": capture.total_subsets,
         "examined_subsets": capture.examined_subsets,
         "sample_count": len(capture.samples),
+        "wall_time_sec": capture.wall_time_sec,
+        "optimizer_time_sec": capture.optimizer_time_sec,
+        "transpile_time_sec": None,
         "circuit_depth_sensitivity": "not-yet-evaluated",
     }
 
@@ -292,10 +374,14 @@ def _sample_object(sample: ArchivedSample) -> dict[str, object]:
             "storage": sample.violation_storage,
             "downlink": sample.violation_downlink,
         },
+        "equality_residual": _equality_residual(sample),
+        "equality_satisfied": sample.equality_satisfied,
+        "qubo_energy": sample.qubo_energy,
+        "weighted_penalty": sample.weighted_penalty,
     }
 
 
-def _write_json(path: Path, payload: dict[str, object]) -> None:
+def _write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
@@ -321,6 +407,8 @@ def _write_summary(path: Path, metrics: dict[str, object]) -> None:
         "relative_gap",
         "p_optimum",
         "p_optimum_definition",
+        "wall_time_sec",
+        "optimizer_time_sec",
         "circuit_depth_sensitivity",
     )
     with path.open("w", encoding="utf-8", newline="") as handle:
@@ -363,6 +451,142 @@ def _git_sha() -> str | None:
     if len(sha) != 40:
         return None
     return sha
+
+
+def _from_assessment(
+    assessment: SampleAssessment,
+    *,
+    bits: tuple[int, ...],
+    count: int | None,
+    probability: float | None,
+) -> ArchivedSample:
+    return ArchivedSample(
+        bits=bits,
+        count=count,
+        probability=probability,
+        selected_task_ids=assessment.selected_task_ids,
+        task_bits=assessment.task_bits,
+        priority=assessment.priority,
+        feasible=assessment.task_feasible,
+        energy=assessment.used.energy,
+        storage=assessment.used.storage,
+        downlink=assessment.used.downlink,
+        violation_energy=assessment.violations.energy,
+        violation_storage=assessment.violations.storage,
+        violation_downlink=assessment.violations.downlink,
+        equality_energy=assessment.residual.energy,
+        equality_storage=assessment.residual.storage,
+        equality_downlink=assessment.residual.downlink,
+        equality_satisfied=assessment.equality_satisfied,
+        qubo_energy=assessment.qubo_energy,
+        weighted_penalty=assessment.weighted_penalty,
+    )
+
+
+def _equality_residual(sample: ArchivedSample) -> dict[str, int] | None:
+    energy = sample.equality_energy
+    storage = sample.equality_storage
+    downlink = sample.equality_downlink
+    if energy is None or storage is None or downlink is None:
+        return None
+    return {"energy": energy, "storage": storage, "downlink": downlink}
+
+
+def _scenario_snapshot(scenario: Scenario) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "schema_version": scenario.schema_version,
+        "scenario_id": scenario.scenario_id,
+        "description": scenario.description,
+        "budgets": {
+            "energy": scenario.budgets.energy,
+            "storage": scenario.budgets.storage,
+            "downlink": scenario.budgets.downlink,
+        },
+        "tasks": [
+            {
+                "id": task.id,
+                "priority": task.priority,
+                "energy": task.energy,
+                "storage": task.storage,
+                "downlink": task.downlink,
+            }
+            for task in scenario.tasks
+        ],
+    }
+    reference = scenario.reference
+    if reference is not None:
+        payload["reference"] = {
+            "source": reference.source,
+            "selected_task_ids": list(reference.selected_task_ids),
+            "optimal_priority": reference.optimal_priority,
+            "used": {
+                "energy": reference.used.energy,
+                "storage": reference.used.storage,
+                "downlink": reference.used.downlink,
+            },
+            "feasible_subsets": reference.feasible_subsets,
+            "total_subsets": reference.total_subsets,
+        }
+    return payload
+
+
+def _trace_payload(
+    trace: tuple[tuple[int, tuple[float, ...], float], ...],
+) -> list[dict[str, object]]:
+    return [
+        {"index": index, "parameters": list(parameters), "energy": energy}
+        for index, parameters, energy in trace
+    ]
+
+
+def _best_feasible(
+    samples: tuple[ArchivedSample, ...],
+) -> tuple[int | None, tuple[str, ...] | None]:
+    feasible = tuple(sample for sample in samples if sample.feasible)
+    if not feasible:
+        return None, None
+    best = max(sample.priority for sample in feasible)
+    winners = {sample.selected_task_ids for sample in feasible if sample.priority == best}
+    return best, min(winners)
+
+
+def _require_duration(value: object, label: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ExperimentArchiveError(f"{label} must be a finite number >= 0, got {value!r}")
+    number = float(value)
+    if not math.isfinite(number) or number < 0:
+        raise ExperimentArchiveError(f"{label} must be a finite number >= 0, got {value!r}")
+
+
+def _require_trace(
+    trace: tuple[tuple[int, tuple[float, ...], float], ...],
+    max_evaluations: int,
+) -> tuple[tuple[int, tuple[float, ...], float], ...]:
+    if (
+        isinstance(max_evaluations, bool)
+        or not isinstance(max_evaluations, int)
+        or max_evaluations < 1
+    ):
+        raise ExperimentArchiveError(
+            f"max_evaluations must be an integer >= 1, got {max_evaluations!r}"
+        )
+    if len(trace) < 1 or len(trace) > max_evaluations:
+        raise ExperimentArchiveError(
+            f"trace length {len(trace)} is outside 1..{max_evaluations}"
+        )
+    checked: list[tuple[int, tuple[float, ...], float]] = []
+    for expected, (index, parameters, energy) in enumerate(trace):
+        if index != expected or len(parameters) != 2:
+            raise ExperimentArchiveError(f"invalid optimizer trace step {index}")
+        if any(isinstance(item, bool) for item in (*parameters, energy)):
+            raise ExperimentArchiveError(f"invalid optimizer trace step {index}")
+        gamma = float(parameters[0])
+        beta = float(parameters[1])
+        value = float(energy)
+        if not (math.isfinite(gamma) and math.isfinite(beta) and math.isfinite(value)):
+            raise ExperimentArchiveError(f"invalid optimizer trace step {index}")
+        checked.append((index, (gamma, beta), value))
+    return tuple(checked)
 
 
 def _require_id(experiment_id: str) -> str:

@@ -48,12 +48,20 @@ Lock a final comparison grid *before* looking at results. A quick exploratory ru
 ## Required artifacts per experiment
 ```text
 results/<experiment-id>/
-  manifest.json         # exact config, dependency+git versions, seeds
+  scenario.json         # immutable tasks, budgets, and reference when present
+  manifest.json         # path, hash, scenario_file, dependency+git versions, seeds
   samples.jsonl         # bit strings, counts, independent decoded evaluation
-  metrics.json          # success, feasible rates, best, cost/depth/timing
+  metrics.json          # feasibility, gap, timing, parameter provenance
+  optimizer_trace.json  # only for optimized QAOA: index, parameters, energy
   circuit.qpy           # optional verified serialized circuit
   summary.csv           # derived, never manually edited
 ```
+
+`scenario.json` is the instance that was solved. `scenario_hash` detects a later change; it does not reconstruct the tasks. Reload `scenario.json` and check that its hash matches the manifest.
+
+Each sample keeps three separate numbers. `violations` are `max(0, used - budget)` on the original tasks. `equality_residual` is `used + slack - budget` for the QUBO equality, and it can be nonzero for a task-feasible assignment whose slack is wrong. `qubo_energy` is the penalized polynomial, and `weighted_penalty` is the λ-weighted sum of squared residuals. Classical rows leave the QUBO fields null because they have no slack assignment.
+
+`parameter_source` is `none` for exact and greedy, `fixed` for a shot run at a supplied `(gamma, beta)`, and `optimizer` for ideal QAOA whose parameters come from COBYLA. A fixed-parameter sample stores `optimizer_max_evaluations: null` and `p_optimum_definition: shot-frequency`. An optimized run stores the evaluation budget, `p_optimum_definition: statevector-probability`, and the trace. Those arms are not the same result. `wall_time_sec` is the solve, sample, or optimizer call. `optimizer_time_sec` equals that interval for an optimized run and is null otherwise. `transpile_time_sec` stays null until transpilation is measured separately. Circuit-depth sensitivity stays `not-yet-evaluated`.
 
 Never commit generated secrets or access tokens. Gitignore large raw results; commit only sanitized aggregate results deliberately selected for the public paper.
 

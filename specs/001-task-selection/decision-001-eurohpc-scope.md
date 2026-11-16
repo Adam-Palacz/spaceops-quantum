@@ -36,6 +36,7 @@ PIAST-Q access is not verified. Native AQT operations are already described as t
   - **F3:** 6 tasks, budgets 3/3/3, 12 logical qubits.
   These identifiers replace the earlier unnamed “priorities / tight budget / tie” trio. The fixtures themselves are written when the T15 grid is locked, not during T14.
 - **Optimizer accounting.** Before T15, lock `max_evaluations` and the seed list. A 256-versus-1024 comparison uses the same fixed parameters, so the shot count is not mixed with a new optimization. An optimizer comparison uses the same shot count and records the evaluation limit. T14 stores `parameter_source` and `optimizer_max_evaluations` so those arms stay distinguishable. `optimizer_max_evaluations` is null on a fixed-parameter sample.
+- **Archive before the grid.** The T14 archive schema is corrected before T15. Each run stores the full scenario, wall time, original violations, equality residuals, and penalized QUBO energy. Optimized QAOA stores its evaluation budget and trace. Fixed-parameter samples are not reported as optimized QAOA. The F1–F3 grid is still not run.
 
 ## Not in this delta
 

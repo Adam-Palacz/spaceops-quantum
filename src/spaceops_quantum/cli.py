@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from fractions import Fraction
 from pathlib import Path
 
@@ -91,7 +92,11 @@ def build_parser() -> argparse.ArgumentParser:
         "run",
         help="solve once and write manifest, samples, and metrics",
     )
-    run.add_argument("--method", required=True, choices=("exact", "greedy", "sampled"))
+    run.add_argument(
+        "--method",
+        required=True,
+        choices=("exact", "greedy", "sampled", "optimized"),
+    )
     run.add_argument("--scenario", required=True, type=Path, help="path to a scenario YAML file")
     run.add_argument("--out", required=True, type=Path, help="parent directory for the archive")
     run.add_argument("--id", required=True, help="archive directory name")
@@ -99,8 +104,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--seed", type=int, default=0)
     run.add_argument("--shots", type=int, help="shot count for the sampled method")
     run.add_argument("--penalty", type=int, help="penalty on every resource for the sampled method")
-    run.add_argument("--gamma", type=float, help="fixed QAOA gamma for the sampled method")
-    run.add_argument("--beta", type=float, help="fixed QAOA beta for the sampled method")
+    run.add_argument("--gamma", type=float, help="fixed gamma, or the optimized start")
+    run.add_argument("--beta", type=float, help="fixed beta, or the optimized start")
+    run.add_argument("--max-evaluations", type=int, help="COBYLA evaluation budget for optimized")
     return parser
 
 
@@ -168,6 +174,11 @@ def _solve(method: str, path: Path, strategy: str, seed: int) -> int:
 def _experiment_run(args: argparse.Namespace) -> int:
     if args.method == "sampled":
         return _experiment_sampled(args)
+    if args.method == "optimized":
+        return _experiment_optimized(args)
+    if args.max_evaluations is not None:
+        print("exact and greedy archives do not use --max-evaluations", file=sys.stderr)
+        return 2
     if args.shots is not None or args.penalty is not None:
         print("exact and greedy archives do not use --shots or --penalty", file=sys.stderr)
         return 2
@@ -183,6 +194,7 @@ def _experiment_run(args: argparse.Namespace) -> int:
         print(str(exc), file=sys.stderr)
         return 1
     try:
+        started = time.perf_counter()
         if args.method == "exact":
             if args.strategy != "resource_density" or args.seed != 0:
                 print("exact does not use --strategy or --seed", file=sys.stderr)
@@ -190,13 +202,21 @@ def _experiment_run(args: argparse.Namespace) -> int:
             result = solve_exact(scenario)
         else:
             result = solve_greedy(scenario, args.strategy, args.seed)
+        elapsed = time.perf_counter() - started
     except GreedySolverError as exc:
         print(str(exc), file=sys.stderr)
         return 2
     try:
         destination = write_experiment(
             args.out,
-            capture_classical(args.id, str(args.scenario), scenario, result),
+            capture_classical(
+                args.id,
+                str(args.scenario),
+                scenario,
+                result,
+                wall_time_sec=elapsed,
+            ),
+            scenario,
         )
     except ExperimentArchiveError as exc:
         print(str(exc), file=sys.stderr)
@@ -206,6 +226,9 @@ def _experiment_run(args: argparse.Namespace) -> int:
 
 
 def _experiment_sampled(args: argparse.Namespace) -> int:
+    if args.max_evaluations is not None:
+        print("fixed-parameter sampling does not use --max-evaluations", file=sys.stderr)
+        return 2
     if args.shots is None or args.penalty is None or args.gamma is None or args.beta is None:
         print("sampled archives require --shots, --penalty, --gamma, and --beta", file=sys.stderr)
         return 2
@@ -223,6 +246,7 @@ def _experiment_sampled(args: argparse.Namespace) -> int:
     from spaceops_quantum.quantum.qaoa import sample_qaoa
 
     penalties = {"energy": args.penalty, "storage": args.penalty, "downlink": args.penalty}
+    started = time.perf_counter()
     record = sample_qaoa(
         scenario,
         parameters=(args.gamma, args.beta),
@@ -230,11 +254,63 @@ def _experiment_sampled(args: argparse.Namespace) -> int:
         seed=args.seed,
         lambda_by_constraint=penalties,
     )
+    elapsed = time.perf_counter() - started
     try:
         destination = write_experiment(
             args.out,
-            capture_sampled(args.id, str(args.scenario), scenario, record, penalties),
+            capture_sampled(
+                args.id,
+                str(args.scenario),
+                scenario,
+                record,
+                penalties,
+                wall_time_sec=elapsed,
+            ),
+            scenario,
         )
+    except ExperimentArchiveError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"experiment_dir: {destination}")
+    return 0
+
+
+def _experiment_optimized(args: argparse.Namespace) -> int:
+    if args.shots is not None:
+        print("optimized archives do not use --shots", file=sys.stderr)
+        return 2
+    if args.penalty is None or args.max_evaluations is None:
+        print("optimized archives require --penalty and --max-evaluations", file=sys.stderr)
+        return 2
+    if (args.gamma is None) != (args.beta is None):
+        print("pass both --gamma and --beta, or neither", file=sys.stderr)
+        return 2
+    if args.penalty < 0 or args.max_evaluations < 1:
+        print("penalty must be >= 0 and max-evaluations must be >= 1", file=sys.stderr)
+        return 2
+    try:
+        scenario = load_scenario(args.scenario)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except ScenarioValidationError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    from spaceops_quantum.experiment.optimized import capture_optimized_run
+
+    penalties = {"energy": args.penalty, "storage": args.penalty, "downlink": args.penalty}
+    initial = None if args.gamma is None else (args.gamma, args.beta)
+    try:
+        capture = capture_optimized_run(
+            args.id,
+            str(args.scenario),
+            scenario,
+            seed=args.seed,
+            max_evaluations=args.max_evaluations,
+            penalties=penalties,
+            initial_parameters=initial,
+        )
+        destination = write_experiment(args.out, capture, scenario)
     except ExperimentArchiveError as exc:
         print(str(exc), file=sys.stderr)
         return 2

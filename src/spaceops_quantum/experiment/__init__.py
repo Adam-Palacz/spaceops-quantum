@@ -9,6 +9,7 @@ from spaceops_quantum.experiment.archive import (
     ExperimentArchiveError,
     ExperimentCapture,
     capture_classical,
+    capture_optimized,
     capture_sampled,
     write_experiment,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "ExperimentArchiveError",
     "ExperimentCapture",
     "capture_classical",
+    "capture_optimized",
     "capture_sampled",
     "write_experiment",
 ]
