@@ -2,7 +2,7 @@
 
 **Hybrid Quantum–Classical Optimization for Earth Observation Satellite Task Selection**
 
-> Status: G4 in progress. G3 passed. One run archives the full scenario, samples, metrics, timing, and, for optimized QAOA, the evaluation trace. Fixed parameters are not reported as an optimized search. The confirmatory F1–F3 grid is locked in `configs/t15_grid.yaml` and has been executed once. The aggregate record is in `specs/001-task-selection/t15-grid.md`. PIAST-Q access is not verified.
+> Status: G4 passed. G5 has not started. The confirmatory comparison is in [`docs/07-confirmatory-report.md`](docs/07-confirmatory-report.md). Ideal QAOA is reported by optimum probability, not by the best priority found anywhere in the statevector. PIAST-Q access is not verified.
 
 ## Research question
 Can QAOA deliver valid and competitive solutions to constrained Earth-observation mission task-selection problems, and how do penalty encoding, circuit depth, sampling noise, and trapped-ion compilation affect performance relative to classical algorithms?
@@ -33,6 +33,7 @@ No multi-satellite constellation, orbital dynamics, real ephemerides, observatio
 9. [`AGENTS.md`](AGENTS.md) — rules for Codex and other coding agents.
 10. [`.cursor/rules/spaceops-quantum.mdc`](.cursor/rules/spaceops-quantum.mdc) — Cursor project rules.
 11. [`prompts/initial-agent-prompt.md`](prompts/initial-agent-prompt.md) — ready-to-paste implementation prompt.
+12. [`docs/07-confirmatory-report.md`](docs/07-confirmatory-report.md) — classical, ideal, and sampled comparison from the locked T15 grid.
 
 ## Agent workflow
 - Read `AGENTS.md`, the feature spec, the math model, and the task list **before editing code**.
@@ -42,7 +43,7 @@ No multi-satellite constellation, orbital dynamics, real ephemerides, observatio
 
 ## Classical commands
 
-G1 checks a scenario and solves it with the exhaustive oracle or the greedy baseline. G2 adds the QUBO and Ising summary. G4 writes one archive per run. The summary report comes in a later task.
+G1 checks a scenario and solves it with the exhaustive oracle or the greedy baseline. G2 adds the QUBO and Ising summary. G4 writes one archive per run and compares the locked F1–F3 grid in the confirmatory report.
 
 ```bash
 uv run spaceops-quantum validate configs/six_tasks.yaml
@@ -50,9 +51,10 @@ uv run spaceops-quantum solve --method exact --scenario configs/six_tasks.yaml
 uv run spaceops-quantum solve --method greedy --scenario configs/six_tasks.yaml --seed 0
 uv run spaceops-quantum qubo inspect --scenario configs/six_tasks.yaml --penalty 41
 uv run spaceops-quantum experiment run --method exact --scenario configs/six_tasks.yaml --out results --id exact-f0
+uv run spaceops-quantum experiment grid --out results/t15
 ```
 
-`validate` checks the scenario schema. `exact` enumerates every subset and prints the feasible optimum. `greedy` ranks tasks by priority divided by the sum of `cost / budget` ratios, breaks ties by higher priority and then by task id, and adds a task only when the remaining budgets still hold it. `--seed` is stored with the greedy result and does not change that ranking. On the six-task fixture the greedy subset matches the optimum; other instances can be worse, and the result stays feasible. `qubo inspect` prints the 18 logical variables, the QUBO constant, and the Ising image under `s = 2v - 1`. The Ising constant is kept, so the two energies match exactly. `--penalty` applies one penalty to every resource. `experiment run` writes `scenario.json`, `manifest.json`, `samples.jsonl`, `metrics.json`, and `summary.csv` under `--out/--id`. The scenario file is the instance that was solved; the manifest stores its hash, seed, and package versions. `--method sampled` records a fixed `(gamma, beta)` and shot frequency. `--method optimized` records a COBYLA trace and a statevector probability; it is not the same result. Classical rows use `p_optimum_definition: not-a-sample`. Generated files in `results/` stay gitignored.
+`validate` checks the scenario schema. `exact` enumerates every subset and prints the feasible optimum. `greedy` ranks tasks by priority divided by the sum of `cost / budget` ratios, breaks ties by higher priority and then by task id, and adds a task only when the remaining budgets still hold it. `--seed` is stored with the greedy result and does not change that ranking. On the six-task fixture the greedy subset matches the optimum; other instances can be worse, and the result stays feasible. `qubo inspect` prints the 18 logical variables, the QUBO constant, and the Ising image under `s = 2v - 1`. The Ising constant is kept, so the two energies match exactly. `--penalty` applies one penalty to every resource. `experiment run` writes `scenario.json`, `manifest.json`, `samples.jsonl`, `metrics.json`, and `summary.csv` under `--out/--id`. The scenario file is the instance that was solved; the manifest stores its hash, seed, and package versions. `--method sampled` records a fixed `(gamma, beta)` and shot frequency. `--method optimized` records a COBYLA trace and a statevector probability; it is not the same result. Classical rows use `p_optimum_definition: not-a-sample`. `experiment grid` repeats the locked 66-cell manifest; it does not accept a different penalty list or seed list. Generated files in `results/` stay gitignored. The comparison tables are in [`docs/07-confirmatory-report.md`](docs/07-confirmatory-report.md).
 
 ## Planned package
 Python 3.11+, `src/spaceops_quantum/`, `pytest`, `ruff`, Qiskit + Qiskit Aer, `numpy`, `scipy`. Resolve dependency versions with a committed lockfile at implementation time; validate current compatibility with the target provider before adding it. Use `uv` for reproducible local workflows.

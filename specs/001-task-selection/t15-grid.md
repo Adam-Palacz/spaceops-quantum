@@ -1,4 +1,4 @@
-# T15 confirmatory grid — locked, not executed
+# T15 confirmatory grid — locked and executed once
 
 Status: locked on 2026-11-16 and executed once on 2026-11-16. Command: `uv run spaceops-quantum experiment grid --out results/t15`. Exit code 0. Wall clock 542.3 s. 66 archives, 0 failures. Raw files stay gitignored under `results/t15/`.
 

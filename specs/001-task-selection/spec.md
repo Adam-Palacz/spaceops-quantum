@@ -48,6 +48,6 @@ A proposal to add orbit propagation, time windows, mission agent integration, sa
 - [x] G1: oracle and input validation tests pass; fixture produces 27 and 37.
 - [x] G2: QUBO and Ising mapping tests pass; correct 18-bit layout.
 - [x] G3: ideal QAOA p=1 local bounded run is reproducible and decoded correctly.
-- [ ] G4: metrics, output schema, report and README commands validated.
+- [x] G4: metrics, output schema, report and README commands validated.
 
 References: `docs/01-requirements.md`, `docs/02-mathematical-model.md`, `docs/04-experiment-protocol.md`.
