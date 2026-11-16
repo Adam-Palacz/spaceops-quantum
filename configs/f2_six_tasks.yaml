@@ -1,0 +1,23 @@
+schema_version: 1
+scenario_id: f2-six-tasks-v1
+description: >-
+  Confirmatory F2 instance. Six tasks, budgets 1/1/1, 9 logical qubits.
+  Synthetic unitless costs. The optimal subset is unique.
+budgets:
+  energy: 1
+  storage: 1
+  downlink: 1
+tasks:
+  - {id: A, priority: 6, energy: 1, storage: 0, downlink: 0}
+  - {id: B, priority: 6, energy: 0, storage: 1, downlink: 0}
+  - {id: C, priority: 6, energy: 0, storage: 0, downlink: 1}
+  - {id: D, priority: 10, energy: 1, storage: 1, downlink: 1}
+  - {id: E, priority: 4, energy: 1, storage: 0, downlink: 0}
+  - {id: F, priority: 7, energy: 0, storage: 1, downlink: 1}
+reference:
+  source: solve_exact-before-t15-grid
+  selected_task_ids: [A, B, C]
+  optimal_priority: 18
+  used: {energy: 1, storage: 1, downlink: 1}
+  feasible_subsets: 16
+  total_subsets: 64

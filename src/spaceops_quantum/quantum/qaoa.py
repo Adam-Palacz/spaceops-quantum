@@ -35,7 +35,11 @@ from spaceops_quantum.quantum.protocol import (
     QuantumBackend,
     installed_quantum_versions,
 )
-from spaceops_quantum.quantum.sampling import SampledRunRecord, build_sampled_record
+from spaceops_quantum.quantum.sampling import (
+    SampledRunRecord,
+    build_sampled_record,
+    is_original_optimum,
+)
 
 _MASS_TOLERANCE = 1e-6
 
@@ -215,7 +219,7 @@ def run_qaoa(
     best = min(records, key=lambda record: (record[0].energy, record[0].index))
     candidates = _candidates(qubo, scenario, best[1])
     feasible = tuple(item for item in candidates if item.assessment.task_feasible)
-    optimum = solve_exact(scenario).solution.selected_task_ids
+    optimum_priority = solve_exact(scenario).solution.priority
     return QaoaResult(
         scenario_id=scenario.scenario_id,
         scenario_hash=qubo.scenario_hash,
@@ -229,7 +233,7 @@ def run_qaoa(
         candidates=candidates,
         best_feasible_priority=_best_feasible_priority(feasible),
         feasibility_rate=sum(item.probability for item in feasible),
-        ideal_optimum_probability=_optimum_probability(candidates, optimum),
+        ideal_optimum_probability=_optimum_probability(candidates, optimum_priority),
         versions=installed_quantum_versions(),
     )
 
@@ -287,11 +291,11 @@ def _best_feasible_priority(feasible: Sequence[QaoaCandidate]) -> int | None:
     return max(item.assessment.priority for item in feasible)
 
 
-def _optimum_probability(candidates: Sequence[QaoaCandidate], optimum: tuple[str, ...]) -> float:
+def _optimum_probability(candidates: Sequence[QaoaCandidate], optimum_priority: int) -> float:
     return sum(
         item.probability
         for item in candidates
-        if item.assessment.selected_task_ids == optimum
+        if is_original_optimum(item.assessment, optimum_priority)
     )
 
 

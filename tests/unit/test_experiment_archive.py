@@ -82,6 +82,8 @@ def test_exact_archive_links_the_fixture_hash_and_version(tmp_path: Path) -> Non
     assert samples[0]["equality_residual"] is None
     assert samples[0]["qubo_energy"] is None
     assert metrics["wall_time_sec"] == 0.25
+    assert metrics["performance_metric"] == "objective"
+    assert metrics["best_feasible_basis"] == "classical-solution"
     assert metrics["optimizer_time_sec"] is None
     assert metrics["transpile_time_sec"] is None
     assert rows[0]["experiment_id"] == "exact-f0"
@@ -185,6 +187,8 @@ def test_infeasible_shots_stay_in_the_archive(tmp_path: Path) -> None:
     assert sample["equality_satisfied"] is False
     assert isinstance(sample["qubo_energy"], int)
     assert metrics["wall_time_sec"] == 0.2
+    assert metrics["performance_metric"] == "shot-frequency"
+    assert metrics["best_feasible_basis"] == "observed-shots"
     assert metrics["optimizer_time_sec"] is None
     assert manifest["optimizer_trace_file"] is None
 
@@ -282,6 +286,8 @@ def test_optimizer_provenance_is_separate_from_fixed_sampling(tmp_path: Path) ->
     assert metrics["parameter_source"] == "optimizer"
     assert metrics["optimizer_max_evaluations"] == 2
     assert metrics["p_optimum_definition"] == "statevector-probability"
+    assert metrics["performance_metric"] == "statevector-probability"
+    assert metrics["best_feasible_basis"] == "statevector-support"
     assert metrics["optimizer_time_sec"] == 0.4
     assert metrics["wall_time_sec"] == 0.4
     assert trace[1]["parameters"] == [0.1, 0.2]

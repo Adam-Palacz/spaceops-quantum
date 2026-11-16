@@ -1,0 +1,31 @@
+schema_version: 1
+grid_id: t15-confirmatory-v1
+status: locked-not-executed
+p: 1
+penalties: [5, 10, 20, 41]
+seeds: [0, 1, 2]
+shot_counts: [256, 1024]
+fixed_parameters:
+  gamma: 0.1
+  beta: 0.2
+  provenance: pre-registered F0 smoke pair, not an optimized result
+optimizer:
+  confirmatory_max_evaluations: 25
+  budget_arm_max_evaluations: [1, 10]
+  budget_arm_penalty: 41
+  budget_arm_seed: 0
+  initial_parameter_rule: seed-uniform-0-pi
+shot_arm_penalty: 41
+classical:
+  greedy_seed: 0
+  greedy_strategy: resource_density
+scenarios:
+  - label: f1
+    path: configs/f1_three_tasks.yaml
+    logical_qubits: 6
+  - label: f2
+    path: configs/f2_six_tasks.yaml
+    logical_qubits: 9
+  - label: f3
+    path: configs/f3_six_tasks.yaml
+    logical_qubits: 12

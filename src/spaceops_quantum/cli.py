@@ -107,6 +107,11 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--gamma", type=float, help="fixed gamma, or the optimized start")
     run.add_argument("--beta", type=float, help="fixed beta, or the optimized start")
     run.add_argument("--max-evaluations", type=int, help="COBYLA evaluation budget for optimized")
+    grid = experiment_commands.add_parser(
+        "grid",
+        help="execute the locked T15 manifest once and archive every cell",
+    )
+    grid.add_argument("--out", required=True, type=Path, help="parent directory for the archives")
     return parser
 
 
@@ -124,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "qubo":
         return _qubo_inspect(args.scenario, args.penalty)
     if args.command == "experiment":
+        if args.experiment_command == "grid":
+            return _experiment_grid(args)
         return _experiment_run(args)
     return _solve(args.method, args.scenario, args.strategy, args.seed)
 
@@ -316,6 +323,18 @@ def _experiment_optimized(args: argparse.Namespace) -> int:
         return 2
     print(f"experiment_dir: {destination}")
     return 0
+
+
+def _experiment_grid(args: argparse.Namespace) -> int:
+    from spaceops_quantum.experiment.execute import execute_grid
+
+    outcomes = execute_grid(args.out)
+    failed = [item["experiment_id"] for item in outcomes if item["status"] != "ok"]
+    print(f"completed: {len(outcomes) - len(failed)}")
+    print(f"failed: {len(failed)}")
+    for experiment_id in failed:
+        print(f"failed_run: {experiment_id}")
+    return 1 if failed else 0
 
 
 def _print_result(result: ClassicalResult) -> None:

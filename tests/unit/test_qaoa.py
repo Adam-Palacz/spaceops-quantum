@@ -82,12 +82,12 @@ feasible_mass = sum(
 assert math.isclose(uniform.feasibility_rate, feasible_mass, rel_tol=0, abs_tol=1e-9)
 assert math.isclose(uniform.feasibility_rate, 0.75, rel_tol=0, abs_tol=1e-8)
 assert uniform.best_feasible_priority == 3
-optimum = solve_exact(scenario).solution.selected_task_ids
-assert optimum == ("A",)
+optimum = solve_exact(scenario).solution
+assert optimum.selected_task_ids == ("A",)
 optimum_mass = sum(
     item.probability
     for item in uniform.candidates
-    if item.assessment.selected_task_ids == optimum
+    if item.assessment.task_feasible and item.assessment.priority == optimum.priority
 )
 assert math.isclose(uniform.ideal_optimum_probability, optimum_mass, abs_tol=1e-9)
 assert math.isclose(uniform.ideal_optimum_probability, 0.25, abs_tol=1e-8)
@@ -154,6 +154,43 @@ for bad in (
         pass
     else:
         raise SystemExit(f"accepted invalid request {bad}")
+
+tie = Scenario(
+    schema_version=1,
+    scenario_id="two-optima",
+    description="two feasible optima and one infeasible priority match",
+    budgets=Resources(1, 0, 0),
+    tasks=(
+        Task("A", priority=4, energy=1, storage=0, downlink=0),
+        Task("B", priority=4, energy=1, storage=0, downlink=0),
+        Task("C", priority=4, energy=2, storage=0, downlink=0),
+    ),
+)
+tie_exact = solve_exact(tie).solution
+assert tie_exact.selected_task_ids == ("A",)
+assert tie_exact.priority == 4
+tie_result = run_qaoa(
+    tie,
+    backend,
+    p=1,
+    shots=None,
+    seed=0,
+    optimizer=OptimizerConfig(max_evaluations=1, initial_parameters=(0.0, 0.0)),
+    lambda_by_constraint=penalties,
+)
+tie_mass = sum(
+    item.probability
+    for item in tie_result.candidates
+    if item.assessment.task_feasible and item.assessment.priority == tie_exact.priority
+)
+canonical_mass = sum(
+    item.probability
+    for item in tie_result.candidates
+    if item.assessment.selected_task_ids == tie_exact.selected_task_ids
+)
+assert tie_mass > canonical_mass
+assert math.isclose(tie_result.ideal_optimum_probability, tie_mass, abs_tol=1e-9)
+assert math.isclose(tie_result.ideal_optimum_probability, 0.25, abs_tol=1e-8)
 print("ok")
 """
 

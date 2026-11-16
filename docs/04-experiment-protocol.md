@@ -10,7 +10,7 @@
 - **F1:** 3 tasks, budgets 1/1/1, 6 logical qubits.
 - **F2:** 6 tasks, budgets 1/1/1, 9 logical qubits.
 - **F3:** 6 tasks, budgets 3/3/3, 12 logical qubits.
-- F1–F3 are the confirmatory grid. Each must be deterministic, with competing tasks, feasible and infeasible subsets, and an optimum from `solve_exact` recorded before QAOA runs. The reference block does not replace that oracle. These names replace the earlier untitled priority, tight-budget, and tie variants. The fixture files are added when the T15 grid is locked.
+- F1–F3 are the confirmatory grid. Each must be deterministic, with competing tasks, feasible and infeasible subsets, and an optimum from `solve_exact` recorded before QAOA runs. The reference block does not replace that oracle. These names replace the earlier untitled priority, tight-budget, and tie variants. The fixture files and `configs/t15_grid.yaml` are locked. The grid has not been executed.
 - Do not assert applicability to 100-satellite constellations from these instances.
 
 Accepted in Decision 001 on 2026-11-15. p=2 is deferred, and circuit-depth sensitivity is not yet evaluated.
@@ -43,7 +43,8 @@ Lock a final comparison grid *before* looking at results. A quick exploratory ru
 - If solver samples no feasible solution, keep `best_feasible_priority = null`, `feasibility_rate = 0`; do not replace with best infeasible result.
 - Do not cherry-pick a seed. Include all planned runs and summary mean/median/range where sensible.
 - The objective is **maximized**; for feasible solutions with known optimum >0: `approx_ratio = value/optimum`, `relative_gap = (optimum-value)/optimum`. For invalid solutions both are null.
-- Success probability is the **frequency of sampling an original-problem optimum**, not the frequency of minimum QUBO energy unless both coincide.
+- Success probability is the frequency of every feasible subset whose priority equals the exact optimum. The lexicographic subset returned by `solve_exact` is one of those subsets, not the only one. An infeasible subset with the same priority is not a success. Success is not the frequency of minimum QUBO energy unless both coincide.
+- For an ideal statevector archive, `p_optimum` is the performance result. `best_feasible_priority` and `approx_ratio` on that archive describe the decoded support. A complete support contains the optimum even when its probability is small. A finite-shot archive reports shot frequency, feasibility rate, and the best feasible priority among the shots that were actually drawn.
 
 ## Required artifacts per experiment
 ```text
@@ -61,7 +62,7 @@ results/<experiment-id>/
 
 Each sample keeps three separate numbers. `violations` are `max(0, used - budget)` on the original tasks. `equality_residual` is `used + slack - budget` for the QUBO equality, and it can be nonzero for a task-feasible assignment whose slack is wrong. `qubo_energy` is the penalized polynomial, and `weighted_penalty` is the λ-weighted sum of squared residuals. Classical rows leave the QUBO fields null because they have no slack assignment.
 
-`parameter_source` is `none` for exact and greedy, `fixed` for a shot run at a supplied `(gamma, beta)`, and `optimizer` for ideal QAOA whose parameters come from COBYLA. A fixed-parameter sample stores `optimizer_max_evaluations: null` and `p_optimum_definition: shot-frequency`. An optimized run stores the evaluation budget, `p_optimum_definition: statevector-probability`, and the trace. Those arms are not the same result. `wall_time_sec` is the solve, sample, or optimizer call. `optimizer_time_sec` equals that interval for an optimized run and is null otherwise. `transpile_time_sec` stays null until transpilation is measured separately. Circuit-depth sensitivity stays `not-yet-evaluated`.
+`parameter_source` is `none` for exact and greedy, `fixed` for a shot run at a supplied `(gamma, beta)`, and `optimizer` for ideal QAOA whose parameters come from COBYLA. A fixed-parameter sample stores `optimizer_max_evaluations: null` and `p_optimum_definition: shot-frequency`. An optimized run stores the evaluation budget, `p_optimum_definition: statevector-probability`, and the trace. Those arms are not the same result. `performance_metric` names the number that carries the claim: `objective` for a classical solve, `shot-frequency` for finite shots, and `statevector-probability` for ideal QAOA. `best_feasible_basis` is `statevector-support` on the ideal arm. `wall_time_sec` is the solve, sample, or optimizer call. `optimizer_time_sec` equals that interval for an optimized run and is null otherwise. `transpile_time_sec` stays null until transpilation is measured separately. Circuit-depth sensitivity stays `not-yet-evaluated`.
 
 Never commit generated secrets or access tokens. Gitignore large raw results; commit only sanitized aggregate results deliberately selected for the public paper.
 

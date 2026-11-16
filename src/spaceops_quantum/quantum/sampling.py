@@ -3,8 +3,10 @@
 Counts are the source of truth. A probability is ``count / shots``. Task
 feasibility comes from the original budgets. When no shot is feasible,
 ``best_feasible_priority`` stays empty and the infeasible priorities remain
-on the samples. ``sampled_optimum_probability`` is the shot frequency of the
-exact task selection. It is not the ideal-statevector probability.
+on the samples. ``sampled_optimum_probability`` is the shot frequency of
+every feasible subset whose priority equals the exact optimum. The
+lexicographic subset returned by ``solve_exact`` is not the only success.
+It is not the ideal-statevector probability.
 """
 
 from __future__ import annotations
@@ -84,9 +86,10 @@ def build_sampled_record(
     best_priority = None if not feasible else max(item.assessment.priority for item in feasible)
     best_ids = _best_ids(feasible, best_priority)
     exact = solve_exact(scenario).solution
-    optimum_ids = exact.selected_task_ids
     optimum_count = sum(
-        item.count for item in decoded if item.assessment.selected_task_ids == optimum_ids
+        item.count
+        for item in decoded
+        if is_original_optimum(item.assessment, exact.priority)
     )
     approx_ratio, relative_gap = _ratios(best_priority, exact.priority)
     return SampledRunRecord(
@@ -144,6 +147,12 @@ def _decode_samples(
     if total != shots:
         raise SampledRecordError(f"counts sum to {total}, expected {shots} shots")
     return tuple(sorted(found, key=lambda item: item.bits))
+
+
+def is_original_optimum(assessment: SampleAssessment, optimum_priority: int) -> bool:
+    """True for every feasible subset that reaches the exact objective."""
+
+    return assessment.task_feasible and assessment.priority == optimum_priority
 
 
 def _best_ids(

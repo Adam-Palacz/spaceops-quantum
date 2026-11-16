@@ -16,6 +16,7 @@ from spaceops_quantum.quantum.sampling import (
     SampledRunRecord,
     SampledShot,
     build_sampled_record,
+    is_original_optimum,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "SampledShot",
     "build_sampled_record",
     "installed_quantum_versions",
+    "is_original_optimum",
 ]

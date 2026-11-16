@@ -93,6 +93,44 @@ def test_zero_feasible_shots_leave_the_best_empty() -> None:
     assert record.samples[0].assessment.task_feasible is False
 
 
+def test_every_feasible_optimum_counts_not_only_the_canonical_subset() -> None:
+    scenario = Scenario(
+        schema_version=1,
+        scenario_id="two-optima",
+        description="two feasible optima and one infeasible priority match",
+        budgets=Resources(1, 0, 0),
+        tasks=(
+            Task("A", priority=4, energy=1, storage=0, downlink=0),
+            Task("B", priority=4, energy=1, storage=0, downlink=0),
+            Task("C", priority=4, energy=2, storage=0, downlink=0),
+        ),
+    )
+    qubo = build_qubo(scenario, _PENALTIES)
+    shots = 4
+    record = build_sampled_record(
+        scenario,
+        qubo,
+        (
+            _sample((0, 1, 0, 0), 3, shots),
+            _sample((0, 0, 1, 0), 1, shots),
+        ),
+        p=1,
+        seed=1,
+        shots=shots,
+        backend="aer-sampled",
+        parameters=(0.1, 0.2),
+        versions=(),
+    )
+    feasible = next(item for item in record.samples if item.bits == (0, 1, 0, 0))
+    rejected = next(item for item in record.samples if item.bits == (0, 0, 1, 0))
+    assert feasible.assessment.selected_task_ids == ("B",)
+    assert feasible.assessment.task_feasible is True
+    assert rejected.assessment.task_feasible is False
+    assert rejected.assessment.priority == 4
+    assert record.sampled_optimum_probability == 0.75
+    assert "qiskit" not in sys.modules
+
+
 def test_counts_must_match_the_shot_budget() -> None:
     scenario = _scenario()
     qubo = build_qubo(scenario, _PENALTIES)

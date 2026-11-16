@@ -6,6 +6,9 @@ and a one-row CSV summary. A classical solve is not a shot frequency:
 A fixed-parameter shot run stores ``shot-frequency`` and leaves
 ``optimizer_max_evaluations`` null. An optimized run stores
 ``statevector-probability``, the evaluation budget, and the COBYLA trace.
+On that arm ``best_feasible_priority`` and ``approx_ratio`` describe the
+decoded statevector support. They are not the performance result;
+``p_optimum`` is.
 Original budget violations, QUBO equality residuals, and penalized energy are
 separate fields. This module does not import Qiskit.
 """
@@ -91,6 +94,8 @@ class ExperimentCapture:
     feasible_subsets: int | None
     total_subsets: int | None
     examined_subsets: int | None
+    best_feasible_basis: str
+    performance_metric: str
     wall_time_sec: float
     optimizer_time_sec: float | None = None
     optimizer_trace: tuple[tuple[int, tuple[float, ...], float], ...] | None = None
@@ -156,6 +161,8 @@ def capture_classical(
         feasible_subsets=result.feasible_subsets,
         total_subsets=result.total_subsets,
         examined_subsets=result.examined_subsets,
+        best_feasible_basis="classical-solution",
+        performance_metric="objective",
         wall_time_sec=wall_time_sec,
     )
 
@@ -209,6 +216,8 @@ def capture_sampled(
         feasible_subsets=None,
         total_subsets=None,
         examined_subsets=None,
+        best_feasible_basis="observed-shots",
+        performance_metric="shot-frequency",
         wall_time_sec=wall_time_sec,
     )
 
@@ -263,6 +272,8 @@ def capture_optimized(
         feasible_subsets=None,
         total_subsets=None,
         examined_subsets=None,
+        best_feasible_basis="statevector-support",
+        performance_metric="statevector-probability",
         wall_time_sec=wall_time_sec,
         optimizer_time_sec=wall_time_sec,
         optimizer_trace=checked_trace,
@@ -344,6 +355,8 @@ def _metrics(capture: ExperimentCapture) -> dict[str, object]:
         "relative_gap": capture.relative_gap,
         "p_optimum": capture.p_optimum,
         "p_optimum_definition": capture.p_optimum_definition,
+        "performance_metric": capture.performance_metric,
+        "best_feasible_basis": capture.best_feasible_basis,
         "feasible_subsets": capture.feasible_subsets,
         "total_subsets": capture.total_subsets,
         "examined_subsets": capture.examined_subsets,
@@ -407,6 +420,8 @@ def _write_summary(path: Path, metrics: dict[str, object]) -> None:
         "relative_gap",
         "p_optimum",
         "p_optimum_definition",
+        "performance_metric",
+        "best_feasible_basis",
         "wall_time_sec",
         "optimizer_time_sec",
         "circuit_depth_sensitivity",

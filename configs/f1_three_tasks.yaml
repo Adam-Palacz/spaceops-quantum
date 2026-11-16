@@ -1,0 +1,20 @@
+schema_version: 1
+scenario_id: f1-three-tasks-v1
+description: >-
+  Confirmatory F1 instance. Three tasks, budgets 1/1/1, 6 logical qubits.
+  Synthetic unitless costs. Two feasible subsets share the optimal priority.
+budgets:
+  energy: 1
+  storage: 1
+  downlink: 1
+tasks:
+  - {id: A, priority: 5, energy: 1, storage: 1, downlink: 1}
+  - {id: B, priority: 5, energy: 1, storage: 1, downlink: 1}
+  - {id: C, priority: 3, energy: 1, storage: 0, downlink: 0}
+reference:
+  source: solve_exact-before-t15-grid
+  selected_task_ids: [A]
+  optimal_priority: 5
+  used: {energy: 1, storage: 1, downlink: 1}
+  feasible_subsets: 4
+  total_subsets: 8
