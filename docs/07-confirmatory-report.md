@@ -124,5 +124,5 @@ Every shot cell drew at least one feasible optimum, so the gap of the best obser
 - Ideal `approx_ratio` of 1 is a complete-support fact. The comparable quantum numbers are `p_optimum`, `p_optimum / p_uniform`, and `p_ground_state`.
 - Three seeds are the whole locked sample. They show wide ranges, especially on F1 and on F2 at λ=5.
 - No continuous-integration run is recorded for the commit that closed T16. Local pytest evidence is listed in `specs/001-task-selection/tasks.md`.
-- No PIAST-Q job was submitted. Emulator shot limits, native gates, and compiled depth remain unverified. The read-only check is planned in `specs/001-task-selection/t17-access-plan.md` and has not been executed.
+- No remote QPU job was submitted. On 2026-11-19 job 2064 ran the AQT offline ideal and noisy simulators for a 100-shot Bell circuit on a CPU node in partition `all`. Emulator shot limits, native hardware gates, and compiled depth remain unverified. See `specs/001-task-selection/t17-environment-note.md`.
 - These results do not transfer to orbital scheduling or a satellite constellation. Feature 002 stays outside this benchmark.

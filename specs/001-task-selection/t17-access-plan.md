@@ -1,6 +1,6 @@
 # T17 — read-only PIAST-Q access check
 
-Status: plan only. Not started. This document does not authorize a provider session, a circuit submission, or a QPU run.
+Status: measurements through job 2064 are in `t17-environment-note.md`. A private environment has `qiskit` 2.4.1 and `qiskit-aqt-provider` 2.0.1. On partition `all`, both AQT offline simulators completed a 100-shot Bell circuit. Slurm still reports no ORCA licenses. No remote QPU was contacted. The offline target gate set and the F1–F3 compiled RXX counts are in `t18-aqt-audit.json`. The T19 matrix is written and has not been run. A portal balance for the proposed 10 hours was not read.
 
 ## Question
 

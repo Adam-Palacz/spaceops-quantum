@@ -1,0 +1,126 @@
+{
+  "audits": [
+    {
+      "backend_register_qubits": 20,
+      "barrier_count": 1,
+      "beta": 0.2,
+      "compiled_qubits": 6,
+      "decision_variables": 3,
+      "depth": 20,
+      "gamma": 0.1,
+      "ideal_and_noisy_counts_match": true,
+      "ideal_target": [
+        "measure",
+        "r",
+        "rxx",
+        "rz"
+      ],
+      "logical_qubits": 6,
+      "measure_count": 6,
+      "native_gates_only": true,
+      "noisy_target": [
+        "measure",
+        "r",
+        "rxx",
+        "rz"
+      ],
+      "optimization_level": 1,
+      "other_operations": [],
+      "penalty": 41,
+      "r_count": 46,
+      "rxx_count": 10,
+      "rz_count": 0,
+      "scenario_id": "f1-three-tasks-v1",
+      "seed_transpiler": 0,
+      "slack_qubits": 3,
+      "targets_match": true,
+      "terminal_full_register_measurement": true,
+      "two_qubit_budget": 400,
+      "within_two_qubit_budget": true
+    },
+    {
+      "backend_register_qubits": 20,
+      "barrier_count": 1,
+      "beta": 0.2,
+      "compiled_qubits": 9,
+      "decision_variables": 6,
+      "depth": 30,
+      "gamma": 0.1,
+      "ideal_and_noisy_counts_match": true,
+      "ideal_target": [
+        "measure",
+        "r",
+        "rxx",
+        "rz"
+      ],
+      "logical_qubits": 9,
+      "measure_count": 9,
+      "native_gates_only": true,
+      "noisy_target": [
+        "measure",
+        "r",
+        "rxx",
+        "rz"
+      ],
+      "optimization_level": 1,
+      "other_operations": [],
+      "penalty": 41,
+      "r_count": 79,
+      "rxx_count": 17,
+      "rz_count": 0,
+      "scenario_id": "f2-six-tasks-v1",
+      "seed_transpiler": 0,
+      "slack_qubits": 3,
+      "targets_match": true,
+      "terminal_full_register_measurement": true,
+      "two_qubit_budget": 400,
+      "within_two_qubit_budget": true
+    },
+    {
+      "backend_register_qubits": 20,
+      "barrier_count": 1,
+      "beta": 0.2,
+      "compiled_qubits": 12,
+      "decision_variables": 6,
+      "depth": 48,
+      "gamma": 0.1,
+      "ideal_and_noisy_counts_match": true,
+      "ideal_target": [
+        "measure",
+        "r",
+        "rxx",
+        "rz"
+      ],
+      "logical_qubits": 12,
+      "measure_count": 12,
+      "native_gates_only": true,
+      "noisy_target": [
+        "measure",
+        "r",
+        "rxx",
+        "rz"
+      ],
+      "optimization_level": 1,
+      "other_operations": [],
+      "penalty": 41,
+      "r_count": 189,
+      "rxx_count": 42,
+      "rz_count": 0,
+      "scenario_id": "f3-six-tasks-v1",
+      "seed_transpiler": 0,
+      "slack_qubits": 6,
+      "targets_match": true,
+      "terminal_full_register_measurement": true,
+      "two_qubit_budget": 400,
+      "within_two_qubit_budget": true
+    }
+  ],
+  "parameters": {
+    "beta": 0.2,
+    "gamma": 0.1
+  },
+  "penalty": 41,
+  "schema_version": 1,
+  "source": "AQT offline ideal and noisy targets, qiskit-aqt-provider 2.0.1",
+  "two_qubit_budget": 400
+}

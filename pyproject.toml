@@ -1,6 +1,6 @@
 # Qiskit and Aer live in the quantum group. Domain code must not import them.
-# Locked by uv on 2026-11-15: qiskit 2.4.1 (inside the published AQT range
-# 2.3–2.4.1) and qiskit-aer 0.18.2. PIAST-Q access is not verified here.
+# Locked by uv: qiskit 2.4.1, qiskit-aer 0.18.2, and qiskit-aqt-provider 2.0.1.
+# The AQT package is used for offline simulator targets. It does not authorize a QPU job.
 
 [project]
 name = "spaceops-quantum"
@@ -27,6 +27,7 @@ dev = [
 quantum = [
     "qiskit==2.4.1",
     "qiskit-aer==0.18.2",
+    "qiskit-aqt-provider==2.0.1",
 ]
 
 [tool.uv]
