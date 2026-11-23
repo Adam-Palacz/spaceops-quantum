@@ -60,4 +60,4 @@ uv run spaceops-quantum experiment grid --out results/t15
 Python 3.11+, `src/spaceops_quantum/`, `pytest`, `ruff`, Qiskit + Qiskit Aer, `numpy`, `scipy`. Resolve dependency versions with a committed lockfile at implementation time; validate current compatibility with the target provider before adding it. Use `uv` for reproducible local workflows.
 
 ## Current access context
-EuroHPC / PIAST-Q is **emulator-first** for this project. Access to physical QPU, exact quota, provider endpoint, and job submission workflow must be verified independently before any hardware integration. Do not use confidential credentials in commits.
+EuroHPC / PIAST-Q is **emulator-first** for this project. The offline CPU benchmark is [`docs/08-t19-emulator-report.md`](docs/08-t19-emulator-report.md). It shows AQT-compatible execution, not a quantum advantage, and it does not request a physical QPU run. Access to physical QPU, exact quota, provider endpoint, and a hardware job still have to be verified before any hardware integration. Do not use confidential credentials in commits.

@@ -60,4 +60,8 @@ The same script, with the version read from package metadata, was submitted as j
 | `offline.ideal()` | `offline_simulator_no_noise` | `00`: 47, `11`: 53 |
 | `offline.noisy()` | `offline_simulator_noise` | `00`: 43, `11`: 57 |
 
-Both calls printed `success`. The samples contain only the Bell outcomes `00` and `11`. These are the provider's local simulators running on an HPC CPU node. The run did not contact a remote QPU, did not list native hardware gates, and did not read an emulator shot limit or a quantum allocation. T17 stays open for those facts. T18 and T19 stay closed.
+Both calls printed `success`. The samples contain only the Bell outcomes `00` and `11`. These are the provider's local simulators running on an HPC CPU node. The run did not contact a remote QPU, did not list native hardware gates, and did not read an emulator shot limit or a quantum allocation. T17 stays open for those facts.
+
+## Later offline grid, 2026-11-23
+
+The sentences above describe the state after job 2064. Job 2089 later ran the six-cell T19 grid on the same kind of CPU node and the same offline simulators. It did not close the unread items: device gates, a shot quota, ORCA licenses, or a QPU allocation. The labeled result is `docs/08-t19-emulator-report.md`.

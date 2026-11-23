@@ -3,6 +3,8 @@
 **Status:** accepted on 2026-11-15, with three amendments. T01–T13 are unchanged.
 T14 may start. T15 does not start until its grid is locked under the rules below.
 
+**Later execution, 2026-11-23:** The T19 offline grid was separately approved and Slurm job 2089 completed on a CPU node. The accepted bullets below are unchanged. The result is `docs/08-t19-emulator-report.md`. No physical QPU job was submitted.
+
 ## Already aligned
 
 Feature 001 is task selection under three aggregate budgets. It is not contact-window scheduling, orbit propagation, or multi-satellite assignment. That boundary is already in `spec.md`, `docs/02-mathematical-model.md`, and `docs/00-vision.md`.

@@ -1,0 +1,105 @@
+{
+  "baselines": {
+    "f2-six-tasks-v1": {
+      "exact_priority": 18,
+      "feasible_uniform_exact": "1/16",
+      "greedy_priority": 18,
+      "scenario_hash": "7b70a751ed15d93beabee8c0ee7881cfea0f3baee6b37eb52fea7b738a37943c",
+      "scenario_hash_note": "Matches specs/001-task-selection/f2-pilot-seed0/pilot.json and a local scenario_hash of configs/f2_six_tasks.yaml.",
+      "uniform_exact": "1/64"
+    },
+    "f3-six-tasks-v1": {
+      "exact_priority": 17,
+      "feasible_uniform_exact": "1/13",
+      "greedy_priority": 17,
+      "scenario_hash": "b0befab7428e1379ca735a9447cced9a4c6dd162f8623c24731bf7def006e585",
+      "scenario_hash_note": "Local scenario_hash of configs/f3_six_tasks.yaml. The grid writer does not store this field, and job 2089 did not print it.",
+      "uniform_exact": "1/64"
+    }
+  },
+  "cells": [
+    {
+      "depth": 29,
+      "ideal_hits": 1,
+      "ideal_optimum_probability_printed": 0.002687,
+      "ideal_standard_error": 0.004987,
+      "noisy_feasibility_rate_printed": 0.445,
+      "noisy_hits": 1,
+      "noisy_standard_error": 0.004987,
+      "rxx_count": 17,
+      "scenario_id": "f2-six-tasks-v1",
+      "seed": 0
+    },
+    {
+      "depth": 29,
+      "ideal_hits": 1,
+      "ideal_optimum_probability_printed": 0.001247,
+      "ideal_standard_error": 0.004987,
+      "noisy_feasibility_rate_printed": 0.425,
+      "noisy_hits": 0,
+      "noisy_standard_error": 0.0,
+      "noisy_standard_error_note": "Wald standard error of a zero count is 0 and is not a claim that the probability is 0.",
+      "rxx_count": 17,
+      "scenario_id": "f2-six-tasks-v1",
+      "seed": 1
+    },
+    {
+      "depth": 30,
+      "ideal_hits": 6,
+      "ideal_optimum_probability_printed": 0.022089,
+      "ideal_standard_error": 0.012062,
+      "noisy_feasibility_rate_printed": 0.265,
+      "noisy_hits": 7,
+      "noisy_standard_error": 0.012995,
+      "rxx_count": 17,
+      "scenario_id": "f2-six-tasks-v1",
+      "seed": 2
+    },
+    {
+      "depth": 48,
+      "ideal_hits": 4,
+      "ideal_optimum_probability_printed": 0.023119,
+      "ideal_standard_error": 0.009899,
+      "noisy_feasibility_rate_printed": 0.19,
+      "noisy_hits": 3,
+      "noisy_standard_error": 0.008595,
+      "rxx_count": 42,
+      "scenario_id": "f3-six-tasks-v1",
+      "seed": 0
+    },
+    {
+      "depth": 47,
+      "ideal_hits": 3,
+      "ideal_optimum_probability_printed": 0.011408,
+      "ideal_standard_error": 0.008595,
+      "noisy_feasibility_rate_printed": 0.14,
+      "noisy_hits": 1,
+      "noisy_standard_error": 0.004987,
+      "rxx_count": 42,
+      "scenario_id": "f3-six-tasks-v1",
+      "seed": 1
+    },
+    {
+      "depth": 48,
+      "ideal_hits": 2,
+      "ideal_optimum_probability_printed": 0.017216,
+      "ideal_standard_error": 0.007036,
+      "noisy_feasibility_rate_printed": 0.225,
+      "noisy_hits": 2,
+      "noisy_standard_error": 0.007036,
+      "rxx_count": 42,
+      "scenario_id": "f3-six-tasks-v1",
+      "seed": 2
+    }
+  ],
+  "elapsed_sec": 51,
+  "exit_code": "0:0",
+  "failed": 0,
+  "formula": "standard_error = sqrt(hits/200 * (1 - hits/200) / 200)",
+  "p": 1,
+  "penalty": 41,
+  "provenance": "Transcribed from the job 2089 print of scenario_id, seed, ideal_optimum_probability rounded to 6 decimals, ideal and noisy optimum_hit_count, noisy feasibility_rate rounded to 3 decimals, rxx_count, and depth. Not a copy of cell.json. Omitted fields were not printed.",
+  "shots": 200,
+  "slurm_job_id": "2089",
+  "slurm_state": "COMPLETED"
+}

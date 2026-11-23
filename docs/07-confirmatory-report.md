@@ -120,9 +120,9 @@ Every shot cell drew at least one feasible optimum, so the gap of the best obser
 ## Limitations
 
 - The instances have 6, 9, and 12 logical qubits. F0, the 18-qubit encoding reference, is not part of this grid.
-- Depth p=2, noise, and AQT-native compilation were not run. Gate and depth counts are absent. `transpile_time_sec` is null and circuit-depth sensitivity is `not-yet-evaluated`.
+- Depth p=2 was not run in this grid, and this grid has no noise model. `transpile_time_sec` is null here and circuit-depth sensitivity is `not-yet-evaluated` for these 66 cells. Offline compilation of the later optimized circuits is in `docs/08-t19-emulator-report.md`.
 - Ideal `approx_ratio` of 1 is a complete-support fact. The comparable quantum numbers are `p_optimum`, `p_optimum / p_uniform`, and `p_ground_state`.
 - Three seeds are the whole locked sample. They show wide ranges, especially on F1 and on F2 at λ=5.
 - No continuous-integration run is recorded for the commit that closed T16. Local pytest evidence is listed in `specs/001-task-selection/tasks.md`.
-- No remote QPU job was submitted. On 2026-11-19 job 2064 ran the AQT offline ideal and noisy simulators for a 100-shot Bell circuit on a CPU node in partition `all`. Emulator shot limits, native hardware gates, and compiled depth remain unverified. See `specs/001-task-selection/t17-environment-note.md`.
+- No remote QPU job was submitted. On 2026-11-19 job 2064 ran the AQT offline ideal and noisy simulators for a 100-shot Bell circuit on a CPU node in partition `all`. Emulator shot limits and native hardware gates remain unread. On 2026-11-23 job 2089 compiled the optimized F2 and F3 circuits to that offline target (17 and 42 RXX). That is not a hardware-backend measurement. See `docs/08-t19-emulator-report.md`.
 - These results do not transfer to orbital scheduling or a satellite constellation. Feature 002 stays outside this benchmark.
