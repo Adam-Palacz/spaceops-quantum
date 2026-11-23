@@ -13,6 +13,7 @@ from spaceops_quantum.domain import load_scenario
 from spaceops_quantum.experiment.baseline import uniform_task_baseline
 from spaceops_quantum.experiment.f2_pilot import PilotError
 from spaceops_quantum.experiment.t19_grid import (
+    _require_offline,
     binomial_standard_error,
     execute_cells,
     main,
@@ -53,6 +54,15 @@ def test_baselines_separate_all_subsets_from_feasible_subsets() -> None:
     assert f3.feasible_task_subsets == 13
     assert f3.feasible_probability.denominator == 13
     assert "qiskit" not in sys.modules
+
+
+def test_offline_ids_are_accepted_without_the_word_ideal() -> None:
+    _require_offline("offline_simulator_no_noise", "ideal")
+    _require_offline("offline_simulator_noise", "noisy")
+    with pytest.raises(PilotError, match="refusing"):
+        _require_offline("offline_simulator_no_noise", "noisy")
+    with pytest.raises(PilotError, match="refusing"):
+        _require_offline("aqt_qpu", "ideal")
 
 
 def test_one_hit_in_200_shots_has_the_binomial_error() -> None:

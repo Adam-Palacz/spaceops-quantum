@@ -22,4 +22,4 @@ if [[ "$actual" != "$expected" ]]; then
   exit 2
 fi
 export SPACEOPS_T19_APPROVED=1
-python -m spaceops_quantum.experiment.t19_grid --out "$HOME/t19-grid" --root "$HOME/spaceops-quantum"
+python -m spaceops_quantum.experiment.t19_grid --out "$HOME/t19-grid-v2" --root "$HOME/spaceops-quantum"

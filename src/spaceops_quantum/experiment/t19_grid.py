@@ -170,7 +170,7 @@ def run_cell(cell: dict[str, object], out_dir: Path, *, root: Path) -> dict[str,
     ideal = provider.offline.ideal()
     noisy = provider.offline.noisy()
     _require_offline(str(ideal.id), "ideal")
-    _require_offline(str(noisy.id), "noise")
+    _require_offline(str(noisy.id), "noisy")
     compiled = transpile(circuit, target=noisy.target, optimization_level=1, seed_transpiler=0)
     if compiled.count_ops().get("rxx", 0) != audit.rxx_count or compiled.depth() != audit.depth:
         raise PilotError("the sampled circuit does not match the compilation audit")
@@ -230,8 +230,15 @@ def run_cell(cell: dict[str, object], out_dir: Path, *, root: Path) -> dict[str,
     return payload
 
 
-def _require_offline(backend_id: str, marker: str) -> None:
-    if "offline" not in backend_id or marker not in backend_id:
+def _require_offline(backend_id: str, kind: str) -> None:
+    """Accept the local AQT ids. The ideal id contains the letters in ``noise``."""
+
+    if not backend_id.startswith("offline_simulator"):
+        raise PilotError(f"refusing backend {backend_id}")
+    ideal = "no_noise" in backend_id
+    if kind == "ideal" and not ideal:
+        raise PilotError(f"refusing backend {backend_id}")
+    if kind == "noisy" and ideal:
         raise PilotError(f"refusing backend {backend_id}")
 
 
