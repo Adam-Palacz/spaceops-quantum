@@ -1,0 +1,36 @@
+{
+  "aer_version": "0.18.2",
+  "approx_ratio": 1.0,
+  "backend_id": "offline_simulator_noise",
+  "beta": 2.3698904883880076,
+  "classical": {
+    "exact_priority": 18,
+    "greedy_priority": 18,
+    "uniform_exact": "1/64"
+  },
+  "compilation": {
+    "depth": 29,
+    "native_gates_only": true,
+    "rxx_count": 17,
+    "terminal_full_register_measurement": true
+  },
+  "evaluations": 25,
+  "feasibility_rate": 0.445,
+  "gamma": 2.5245355998100076,
+  "ideal_optimum_probability": 0.002687439220942795,
+  "noisy_seed": 0,
+  "optimum_hit_count": 1,
+  "optimum_hit_frequency": 0.005,
+  "p": 1,
+  "parameter_source_noisy": "fixed-from-ideal-trace",
+  "peak_rss_kb": 146944,
+  "penalty": 41,
+  "sample_seconds": 0.07494253851473331,
+  "scenario_hash": "7b70a751ed15d93beabee8c0ee7881cfea0f3baee6b37eb52fea7b738a37943c",
+  "scenario_id": "f2-six-tasks-v1",
+  "search_seconds": 1.081058332696557,
+  "seed": 0,
+  "shots": 200,
+  "slurm_job_id": "2081",
+  "wall_time_sec": 2.0834958609193563
+}

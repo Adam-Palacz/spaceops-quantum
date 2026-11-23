@@ -34,27 +34,41 @@ def planned_jobs() -> tuple[dict[str, object], ...]:
                     "stage": "ideal-optimize",
                 }
             )
-            jobs.append(
-                {
-                    "backend": "offline.noisy",
-                    "circuits": 1,
-                    "evaluations": 0,
-                    "objective": "shot-frequency",
-                    "parameter_source": "fixed-from-ideal-trace",
-                    "penalty": 41,
-                    "scenario_id": scenario_id,
-                    "seed": seed,
-                    "shots": _SHOTS,
-                    "stage": "noisy-fixed",
-                }
-            )
+            for stage, backend in (
+                ("ideal-fixed", "offline.ideal"),
+                ("noisy-fixed", "offline.noisy"),
+            ):
+                jobs.append(
+                    {
+                        "backend": backend,
+                        "circuits": 1,
+                        "evaluations": 0,
+                        "objective": "shot-frequency",
+                        "parameter_source": "fixed-from-ideal-trace",
+                        "penalty": 41,
+                        "scenario_id": scenario_id,
+                        "seed": seed,
+                        "shots": _SHOTS,
+                        "stage": stage,
+                    }
+                )
     return tuple(jobs)
 
 
 def maximum_shots() -> int:
-    """Shots on the noisy readout. The statevector search contributes none."""
+    """Shots on the offline readouts. The statevector search contributes none."""
 
     return sum(int(job["circuits"]) * int(job["shots"] or 0) for job in planned_jobs())
+
+
+def noisy_shots() -> int:
+    """Shots on ``offline.noisy()`` only."""
+
+    return sum(
+        int(job["circuits"]) * int(job["shots"] or 0)
+        for job in planned_jobs()
+        if job["stage"] == "noisy-fixed"
+    )
 
 
 def pilot_job() -> dict[str, object]:

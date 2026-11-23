@@ -23,7 +23,9 @@ class UniformTaskBaseline:
 
     task_subsets: int
     optimal_task_subsets: int
+    feasible_task_subsets: int
     probability: Fraction
+    feasible_probability: Fraction
 
 
 def uniform_task_baseline(scenario: Scenario) -> UniformTaskBaseline:
@@ -33,12 +35,22 @@ def uniform_task_baseline(scenario: Scenario) -> UniformTaskBaseline:
     width = len(scenario.tasks)
     total = 1 << width
     winners = 0
+    feasible = 0
     for mask in range(total):
         bits = tuple((mask >> index) & 1 for index in range(width))
         evaluation = evaluate_solution(scenario, bits)
-        if evaluation.feasible and evaluation.priority == optimum:
+        if not evaluation.feasible:
+            continue
+        feasible += 1
+        if evaluation.priority == optimum:
             winners += 1
-    return UniformTaskBaseline(total, winners, Fraction(winners, total))
+    return UniformTaskBaseline(
+        total,
+        winners,
+        feasible,
+        Fraction(winners, total),
+        Fraction(winners, feasible),
+    )
 
 
 def probability_on_bitstrings(
